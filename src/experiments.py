@@ -426,38 +426,14 @@ def special_rhs_for_paper_experiment(k_list,h_power_list,num_pieces,
 
                     prob_fine.solve()
 
-                    u_h_coarse_to_fine = transfer_to_fine(
-                        prob_coarse.u_h,prob_fine.V)
 
                     u_h_fine = prob_fine.u_h
                     
-                    fem_err = hh_utils.norm_weighted(
-                        u_h_fine - u_h_coarse_to_fine,k)
 
-                    rhs_norm = prob.rhs_nbpc_norm
+                    #need to compute norms using new technology, and then save them to a file
 
-                    # store error and rhs
-
-                    storage[ii_system * num_rhs + ii_rhs,:] =\
-                        [fem_err,rhs_norm]
-
-                    info = {'k' : k,
-                            'h_power' : h_power,
-                            'num_pieces' : num_pieces,
-                            'noise_level_system_A' : noise_level_system_A,
-                            'noise_level_system_n' : noise_level_system_n,
-                            'noise_level_rhs_A' : noise_level_rhs_A,
-                            'num_system' : num_system,
-                            'num_rhs' : num_rhs,
-                            'fine_grid_refinement' : fine_grid_refinement,
-                            'seed' : seed
-                    }        
-
-                    write_repeats_to_csv(storage,
-                                         save_location,
-                                         'testing-fem-error-with-special_rhs',
-                                         info)
-
+                    # Need to figure out how to attach metadata - Sumatra?
+                    
           
 def rhs_paper_problem_setup(num_points,num_pieces,noise_level_system_A,
                             noise_level_system_n,noise_level_rhs_A):
@@ -523,39 +499,3 @@ def rhs_paper_problem_setup(num_points,num_pieces,noise_level_system_A,
     prob.force_lu()
 
     return (prob,A_rhs,f_rhs)
-
-def transfer_to_fine(func,V_fine):
-    """Interpolates a Firedrake Function onto a finer mesh.
-    
-    The meshes don't have to be nested, although this (probably) only
-    works for nodal finite elements, and has only been tested on 1st
-    order CG elements in 2-d.
-
-    This code is courtesy of Jack Betteridge (University of Bath).
-
-    Parameters:
-
-    func - a Firedrake Function, to be interpolated.
-
-    V_fine - a Firedrake FunctionSpace, into which func will be
-    interpolated.
-
-    Output:
-
-    func_fine - a Firedrake Function defined on V_fine, given by func
-    interpolated into V_fine.
-    """
-
-    # This code currently doesn't work, due to a bug in complex.
-    
-    mesh_fine = V_fine.mesh()
-    V = func.function_space()
-
-    W = fd.VectorFunctionSpace(mesh_fine, V_fine.ufl_element())
-    coords = fd.interpolate(mesh_fine.coordinates, W)
-
-    func_fine = fd.Function(V_fine)
-
-    func_fine.dat.data[:] = func.at(coords.dat.data_ro)
-
-    return func_fine
