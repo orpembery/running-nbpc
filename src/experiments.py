@@ -3,6 +3,7 @@ import helmholtz.problems as hh
 import helmholtz.coefficients as coeff
 import helmholtz.utils as hh_utils
 import numpy as np
+import pandas as pd
 
 def nearby_preconditioning_experiment(V,k,A_pre,A_stoch,n_pre,n_stoch,f,g,
                                 num_repeats):
@@ -294,7 +295,7 @@ def nearby_preconditioning_experiment_gamma(k_range,n_lower_bound,n_var_base,
             
             hh_utils.write_GMRES_its(GMRES_its,save_location,info)
 
-def special_rhs_for_paper_experiment(k_list,h_power_list,num_pieces,
+def special_rhs_for_paper_experiment(k_list,h_mult_list,h_power_list,num_pieces,
                                      noise_level_system_A,noise_level_system_n,
                                      noise_level_rhs_A,num_system,num_rhs,
                                      fine_grid_refinement,seed,save_location):
@@ -313,10 +314,17 @@ def special_rhs_for_paper_experiment(k_list,h_power_list,num_pieces,
     k_list - list of positive integers - the values of k for which
     experiments will be done.
 
+    h_mult_list - list of positive real defining the magnitude of the
+    different values of h (not taking into account the dependence on k -
+    this is done in h_power_list).
+
     h_power_list - list of reals defining the dependence of the
-    different values of h upon k. For example, if h_power_list =
-    [-1.0,-1.5] then two sets of experiments will be done, one with h ~
-    k**-1.0 and one with h**-1.5.
+    different values of h upon k. For example, if h_mult_list =
+    [1.0,2.0] and h_power_list = [-1.0,-1.5] then two sets of
+    experiments will be done, one with h = 1.0 * k**-1.0 and one with h
+    = 2.0 * k**-1.5. Note that if an element of h_power_list is 0.0,
+    then the corresponding computations will be performed on a mesh that
+    is independent of k.
 
     num_pieces - postive integer - the random coefficients will be
     piecewise-constant on a num_pieces by num_pieces grid. (See notes in
@@ -338,48 +346,58 @@ def special_rhs_for_paper_experiment(k_list,h_power_list,num_pieces,
     num_rhs - positive integer - the number of different right-hand
     sides (for each different system) for which to perform experiments.
 
-    fine_grid_refinement - positive integer - the `true' solution is
-    computed on a very fine grid - this will be a
-    fine_grid_refinement-fold uniform refinement of the finest grid used
-    in any of the computations. (E.g., if fine_grid_refinement = 3, the
-    the grid for computing the `true' solution will have a mesh size
-    2^{-3} = 3-times smaller than the finest grid used in any of the
-    computations.)
+    fine_grid_mult_power - 2-tuple of a positive real and a real - the
+    mesh size on which the fine solution (which will serve as a proxy
+    for the true solution) will be computed. E.g. if
+    fine_grid_mult_power = (0.1,-2.0) then for each value of k the fine
+    grid mesh size will be h = 0.1 * k**-2.0. Note that if the second
+    element of the tuple is 0.0, then the mesh size will be independent
+    of k.
 
-    seed - positive integer, not too large. Used to set the random seeds
-    in the generation of the random coefficients.
+    seed - positive integer, prime, not too large. Used to set the
+    random seeds in the generation of the random coefficients.
 
-    save_location - see helmholtz.utils.write_GMRES_its
+    save_location - ?????
     """
-    
-    smallest_mesh_size_num_points =\
-        h_to_mesh_points(max(k_list)**min(h_power_list))
 
-    num_points_fine = smallest_mesh_size_num_points * fine_grid_refinement
+    num_h = len(h_power_list)
+
+    # Test that both the h arrays are the same length?
        
     for k in k_list:
 
-        for h_power in h_power_list:
+        num_points_fine = utils.h_to_mesh_points(
+            fine_grid_mult_power[0] * k**fine_grid_mult_power[1])
 
-            storage = np.full((num_system*num_rhs,2),-1.0)
-            
-            # Set up problem so that it can be easily altered
+        # Calculate mesh sizes
+        ideal_mesh_sizes = [h_mult_list[ii] * k**h_power_list[ii] for ii in range(num_h)]
 
-            num_points_coarse = h_to_mesh_points(k**h_power)
-            
+        all_num_points = [utils.h_to_mesh_points(h) for h in ideal_mesh_sizes]
+
+        mesh_sizes = [utils.mesh_points_to_h(num_points,num_points) for num_points in all_num_points]
+
+        # Set up `fine' problem
+        (prob_fine,A_rhs_fine,f_rhs_fine) =\
+            rhs_paper_problem_setup(num_points_fine,num_pieces,
+                                    noise_level_system_A,
+                                    noise_level_system_n,noise_level_rhs_A)
+
+        # Set up storage
+        column_labels = pd.MultiIndex.from_product([list(range(num_system)),list(range(num_rhs))])
+
+        storage = pd.DataFrame(np.empty(num_h,num_system * num_rhs),columns=column_labels,index=mesh_sizes)
+
+        # Don't think this will work, as I want to be able to have each entry as a numpy array (the data)
+
+        # Is this the most logical way to organise the loops? I think not - I think it's better to have ii_system, ii_rhs, ii_h
+        for ii_h in range(num_h):
+                        
             (prob_coarse,A_rhs_coarse,f_rhs_coarse) =\
-                rhs_paper_problem_setup(num_points_coarse,num_pieces,
+                rhs_paper_problem_setup(all_num_points[ii],num_pieces,
                                         noise_level_system_A,
                                         noise_level_system_n,noise_level_rhs_A)
 
-            # Set up `fine' problem
-
-            (prob_fine,A_rhs_fine,f_rhs_fine) =\
-                rhs_paper_problem_setup(num_points_fine,num_pieces,
-                                        noise_level_system_A,
-                                        noise_level_system_n,noise_level_rhs_A)
-            
-            for ii_system in range(num_system):
+                for ii_system in range(num_system):
 
                 # What follows with constantly setting seeds is a bit of
                 # a hack - we need to get identical random numbers for
@@ -427,12 +445,16 @@ def special_rhs_for_paper_experiment(k_list,h_power_list,num_pieces,
                     prob_fine.solve()
 
 
-                    u_h_fine = prob_fine.u_h
+                    # Save the dat
+
+                    storage[ii_h][ii_system][ii_rhs] = # coarse
+
+                    # Need to make mesh_gen file
                     
 
                     #need to compute norms using new technology, and then save them to a file
 
-                    # Need to figure out how to attach metadata - Sumatra?
+                    # Need to figure out how to attach metadata - Sumatra? (or just hack it for now - new technology will return a dataframe of the errors)
                     
           
 def rhs_paper_problem_setup(num_points,num_pieces,noise_level_system_A,
