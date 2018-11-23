@@ -6,3 +6,4 @@ Contains the experiments for the nearby preconditioning paper. Development ongoi
 
 1) Pandas
 2) Helmholtz Firedrake
+3) Helmholtz complex interpolation hack
