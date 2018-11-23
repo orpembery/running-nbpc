@@ -4,6 +4,10 @@ import helmholtz.coefficients as coeff
 import helmholtz.utils as hh_utils
 import numpy as np
 import pandas as pd
+import firedrake_complex_compute_error as error
+from shutil import move
+from matplotlib import pyplot as plt
+from matplotlib import cm
 
 def nearby_preconditioning_experiment(V,k,A_pre,A_stoch,n_pre,n_stoch,f,g,
                                 num_repeats):
@@ -295,10 +299,10 @@ def nearby_preconditioning_experiment_gamma(k_range,n_lower_bound,n_var_base,
             
             hh_utils.write_GMRES_its(GMRES_its,save_location,info)
 
-def special_rhs_for_paper_experiment(k_list,h_mult_list,h_power_list,num_pieces,
+def test_fem_approx_props(k_list,h_mult_power_list,num_pieces,
                                      noise_level_system_A,noise_level_system_n,
                                      noise_level_rhs_A,num_system,num_rhs,
-                                     fine_grid_refinement,seed,save_location):
+                                     fine_grid_mult_power,seed):
     """Tests to see if the required condition in the paper holds.
 
     For a variety of different Helmholtz systems, and a variety of
@@ -314,17 +318,13 @@ def special_rhs_for_paper_experiment(k_list,h_mult_list,h_power_list,num_pieces,
     k_list - list of positive integers - the values of k for which
     experiments will be done.
 
-    h_mult_list - list of positive real defining the magnitude of the
-    different values of h (not taking into account the dependence on k -
-    this is done in h_power_list).
-
-    h_power_list - list of reals defining the dependence of the
-    different values of h upon k. For example, if h_mult_list =
-    [1.0,2.0] and h_power_list = [-1.0,-1.5] then two sets of
-    experiments will be done, one with h = 1.0 * k**-1.0 and one with h
-    = 2.0 * k**-1.5. Note that if an element of h_power_list is 0.0,
-    then the corresponding computations will be performed on a mesh that
-    is independent of k.
+    h_mult__power_list - list of 2-tuples, where each tuple consists of
+    a positive real and a real. These define the magnitude of the
+    different values of h For example, if h_mult_power_list =
+    [(1.0,-1.0),(2.0,-1.5)] then two sets of experiments will be done,
+    one with h = 1.0 * k**-1.0 and one with h = 2.0 * k**-1.5. Note that
+    if the second element of any tuple is 0.0, then the corresponding
+    computations will be performed on a mesh that is independent of k.
 
     num_pieces - postive integer - the random coefficients will be
     piecewise-constant on a num_pieces by num_pieces grid. (See notes in
@@ -357,43 +357,36 @@ def special_rhs_for_paper_experiment(k_list,h_mult_list,h_power_list,num_pieces,
     seed - positive integer, prime, not too large. Used to set the
     random seeds in the generation of the random coefficients.
 
-    save_location - ?????
+
+    Output - For each k, the results are outputted to a Pandas DataFrame, the location of which is contained in 'k-df_functions_loc.json'.
     """
 
-    num_h = len(h_power_list)
-
     # Test that both the h arrays are the same length?
-       
-    for k in k_list:
 
-        num_points_fine = utils.h_to_mesh_points(
-            fine_grid_mult_power[0] * k**fine_grid_mult_power[1])
+    # For computational ease, add the fine mesh to the end of the list
+    h_mult_power_list.append(fine_grid_mult_power)
+    
+    for k in k_list:            
 
-        # Calculate mesh sizes
-        ideal_mesh_sizes = [h_mult_list[ii] * k**h_power_list[ii] for ii in range(num_h)]
+        # Calculate number of points for all meshes
+        ideal_mesh_sizes = [h_mult_power_list[ii][0] * k**h_mult_power_list[ii][1] for ii in range(num_h)]
 
         all_num_points = [utils.h_to_mesh_points(h) for h in ideal_mesh_sizes]
 
-        mesh_sizes = [utils.mesh_points_to_h(num_points,num_points) for num_points in all_num_points]
-
-        # Set up `fine' problem
-        (prob_fine,A_rhs_fine,f_rhs_fine) =\
-            rhs_paper_problem_setup(num_points_fine,num_pieces,
-                                    noise_level_system_A,
-                                    noise_level_system_n,noise_level_rhs_A)
-
         # Set up storage
-        column_labels = pd.MultiIndex.from_product([list(range(num_system)),list(range(num_rhs))])
+        index_labels = [h_mult_power_list,fine_grid_mult_power]
 
-        storage = pd.DataFrame(np.empty(num_h,num_system * num_rhs),columns=column_labels,index=mesh_sizes)
+        column_labels = pd.MultiIndex.from_tensor([list(range(num_system)),list(range(num_rhs))])
+
+        storage = pd.DataFrame(np.empty(num_h,num_system * num_rhs),columns=column_labels,index=index_labels)
 
         # Don't think this will work, as I want to be able to have each entry as a numpy array (the data)
 
-        # Is this the most logical way to organise the loops? I think not - I think it's better to have ii_system, ii_rhs, ii_h
-        for ii_h in range(num_h):
+        # The following will also calculate the solution on the fine mesh, because we added that to the end of h_mult_power_list
+        for ii_h in range(len(h_mult_power_list)):
                         
-            (prob_coarse,A_rhs_coarse,f_rhs_coarse) =\
-                rhs_paper_problem_setup(all_num_points[ii],num_pieces,
+            (prob,A_rhs,f_rhs) =\
+                rhs_setup_for_fem_testing(all_num_points[ii_h],num_pieces,
                                         noise_level_system_A,
                                         noise_level_system_n,noise_level_rhs_A)
 
@@ -401,8 +394,8 @@ def special_rhs_for_paper_experiment(k_list,h_mult_list,h_power_list,num_pieces,
 
                 # What follows with constantly setting seeds is a bit of
                 # a hack - we need to get identical random numbers for
-                # both the coarse and fine problems, and this is the
-                # simplest way to do it (that I can think of).
+                # each different value of h, and this is the simplest
+                # way to do it (that I can think of).
 
                 # As random seeds, for the system use multiples of 2,
                 # and for the right-hand sides use the odd multiples of
@@ -411,60 +404,90 @@ def special_rhs_for_paper_experiment(k_list,h_mult_list,h_power_list,num_pieces,
                 
                 np.random.seed(seed + 2.0*ii_system)
 
-                prob_coarse.A_stoch.sample()
+                prob.A_stoch.sample()
 
-                prob_coarse.n_stoch.sample()
-
-                np.random.seed(seed + 2.0*ii_system)
-
-                prob_fine.A_stoch.sample()
-
-                prob_fine.n_stoch.sample()          
+                prob.n_stoch.sample()
                 
                 for ii_rhs in range(num_rhs):
 
-                    print("k, h_power, system number, rhs number")
-                    print(k, h_power, ii_system, ii_rhs)
+                    print("k, h number, system number, rhs number")
+                    print(k, ii_h, ii_system, ii_rhs)
 
                     np.random.seed(seed + 3.0 + 6.0 * ii_rhs)
 
-                    A_rhs_coarse.sample()
+                    A_rhs.sample()
 
-                    f_rhs_coarse.assign(np.random.normal(
+                    # Assign random normal(0,1**2) to each entry of f. I
+                    # am unsure if this will work, as you might need to
+                    # assign an expression. However, if it doesn't
+                    # we'll just hack it using the dat.
+                    f_rhs.assign(np.random.normal(
                         f_rhs_coarse.vector().array().size))
-
+                    
                     np.random.seed(seed + 3.0 + 6.0 * ii_rhs)
 
-                    A_rhs_fine.sample()
+                    prob.solve()
 
-                    f_rhs_fine.assign(np.random.normal(
-                        f_rhs_fine.vector().array().size))
+                    # Save the function data
+                    # No ide if this way of indexing will work.
+                    storage[ii_h][ii_system][ii_rhs] = prob.u_h.dat.data_ro
 
-                    prob_coarse.solve()
+# Need to make mesh_gen file - k-dependent aaaaah!
 
-                    prob_fine.solve()
+        file_loc = error.complex_write_functions(storage)
 
+        # Rename file location so subsequent runs don't overwrite it
+        move(file_loc,str(k) + file_loc)
 
-                    # Save the dat
+# Need to figure out how to attach metadata - Sumatra? Don't worry for now.
 
-                    storage[ii_h][ii_system][ii_rhs] = # coarse
+def real_process_for_fem_approx_props(k_list):
+    """Process the files generated in test_fem_approx_props.
 
-                    # Need to make mesh_gen file
-                    
+    Currently, that means put them all on one graph.
 
-                    #need to compute norms using new technology, and then save them to a file
+    ONLY RUN THIS IN REAL FIREDRAKE.
 
-                    # Need to figure out how to attach metadata - Sumatra? (or just hack it for now - new technology will return a dataframe of the errors)
+    Inputs:
+
+    k_list - see test_fem_approx_props. Must be the same k_list as used in the corresponding call to test_fem_approx_props.
+    """
+
+    # Select colormap tuples based on how many items there are in h_list - if we've got <= 10 mesh types, then tab10 is what we want, otherwise, tab20 (I think)
+    colormap = cm.get_cmap('tab10')
+
+    df_massive = 
+    
+    # For each k
+    for k in k_list:
+        df_out = error.real_process_functions(str(k) + 'df_functions_loc.json',norm_type=????)
+        # I'm not entirely clear how to do the norm thing - I want to do it like a function handle, but that doesn't seem quite right here....
+        
+
+        # Plot results in a different colour for different mesh dependencies
+        h_num = len(df_out.index)
+        for ii_h in range(h_num):
+            plt.plot(k,df_out,iloc[ii_h,:],color=colormap(floor(ii_h * 255 / h_num)))
+    # Dsiplay the plot
+    plt.show()
+    # I full expect the legend will look an absolute mess.
+    # Maybe it'll be better to bring it into a big dataframe, and then do some plotting based on multiindices.
+    # Yes, let's do that instead.
+
+        
                     
           
-def rhs_paper_problem_setup(num_points,num_pieces,noise_level_system_A,
+def rhs_setup_for_fem_testing(num_points,num_pieces,noise_level_system_A,
                             noise_level_system_n,noise_level_rhs_A):
     """Sets up all the problems for the experiments with a special rhs.
+
+    Also ensures an exact direct solver (using an LU factorisation) is
+    used.
     
     Parameters:
 
     num_points - positive integer - the mesh for the problem will be a
-    num_points by num_points grid.
+    num_points by num_points grid on the unit square.
 
     num_pieces - see  special_rhs_for_paper_experiment.
 
@@ -490,6 +513,7 @@ def rhs_paper_problem_setup(num_points,num_pieces,noise_level_system_A,
     by the parameters num_points, noise_level_system_A, and
     noise_level_system_n, and with a special right-hand side given by
     A_rhs and f_rhs.
+
     """
 
     mesh = fd.UnitSquareMesh(numpoints,num_points)
