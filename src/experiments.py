@@ -456,14 +456,17 @@ def real_process_for_fem_approx_props(k_list):
     # Select colormap tuples based on how many items there are in h_list - if we've got <= 10 mesh types, then tab10 is what we want, otherwise, tab20 (I think)
     colormap = cm.get_cmap('tab10')
 
-    df_massive = 
-    
-    # For each k
-    for k in k_list:
-        df_out = error.real_process_functions(str(k) + 'df_functions_loc.json',norm_type=????)
-        # I'm not entirely clear how to do the norm thing - I want to do it like a function handle, but that doesn't seem quite right here....
-        
+    #idea kind of got from http://pandas.pydata.org/pandas-docs/stable/generated/pandas.concat.html via https://stackoverflow.com/questions/14744068/prepend-a-level-to-a-pandas-multiindex
 
+    list_of_df = []
+
+    list_of_df = [list_of_df.append(error.real_process_functions(str(k) + 'df_functions_loc.json',norm_type=????)) for k in k_list
+    # I'm not entirely clear how to do the norm thing - I want to do it like a function handle, but that doesn't seem quite right here....
+    
+    df_all = pd.concat(list_of_df,keys=str(k_list))
+
+                  # Figure out how to plot in a different colour for each mesh pairing, putting k on the x axis and the error on the y axis
+                  
         # Plot results in a different colour for different mesh dependencies
         h_num = len(df_out.index)
         for ii_h in range(h_num):
