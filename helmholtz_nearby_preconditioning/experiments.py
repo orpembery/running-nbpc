@@ -1,7 +1,7 @@
 import firedrake as fd
-import helmholtz.problems as hh
-import helmholtz.coefficients as coeff
-import helmholtz.utils as hh_utils
+import helmholtz_firedrake.problems as hh
+import helmholtz_firedrake.coefficients as coeff
+import helmholtz_firedrake.utils as hh_utils
 import numpy as np
 
 def nearby_preconditioning_experiment(V,k,A_pre,A_stoch,n_pre,n_stoch,f,g,
@@ -56,10 +56,12 @@ def nearby_preconditioning_experiment(V,k,A_pre,A_stoch,n_pre,n_stoch,f,g,
             Have you specified something using a big loop in UFL?\
             Aborting all further solves.")
             break
-            
-        all_GMRES_its.append(prob.GMRES_its)
 
-        prob.sample()
+        if fd.COMM_WORLD.rank == 0:
+        
+            all_GMRES_its.append(prob.GMRES_its)
+
+            prob.sample()
 
     all_GMRES_its  = np.array(all_GMRES_its)
 
@@ -221,18 +223,19 @@ def nearby_preconditioning_piecewise_experiment_set(
                     GMRES_its = nearby_preconditioning_experiment(
                         V,k,A_pre,A_stoch,n_pre,n_stoch,f,g,num_repeats)
 
-                    hh_utils.write_GMRES_its(
-                        GMRES_its,save_location,
-                        {'k' : k,
-                         'h_tuple' : h_tuple,
-                         'num_pieces' : num_pieces,
-                         'A_pre_type' : A_pre_type,
-                         'n_pre_type' : n_pre_type,
-                         'noise_master' : noise_master,
-                         'modifier' : modifier,
-                         'num_repeats' : num_repeats
-                         }
-                        )
+                    if fd.COMM_WORLD.rank == 0:
+                        hh_utils.write_GMRES_its(
+                            GMRES_its,save_location,
+                            {'k' : k,
+                             'h_tuple' : h_tuple,
+                             'num_pieces' : num_pieces,
+                             'A_pre_type' : A_pre_type,
+                             'n_pre_type' : n_pre_type,
+                             'noise_master' : noise_master,
+                             'modifier' : modifier,
+                             'num_repeats' : num_repeats
+                             }
+                            )
 
 def nearby_preconditioning_experiment_gamma(k_range,n_lower_bound,n_var_base,
                                       n_var_k_power_range,num_repeats):
