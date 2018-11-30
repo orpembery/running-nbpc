@@ -48,7 +48,8 @@ def nearby_preconditioning_experiment(V,k,A_pre,A_stoch,n_pre,n_stoch,f,g,
     all_GMRES_its = []
 
     for ii_repeat in range(num_repeats):
-        print(ii_repeat)
+        if fd.COMM_WORLD.rank == 0:
+            print(ii_repeat)
         try:
             prob.solve()
         except RecursionError:
@@ -207,8 +208,8 @@ def nearby_preconditioning_piecewise_experiment_set(
                 n_noise_master = noise_master[1]
 
                 for modifier in noise_modifier_list:
-
-                    print(k,h_tuple,noise_master,modifier)
+                    if fd.COMM_WORLD.rank == 0:
+                        print(k,h_tuple,noise_master,modifier)
                     
                     A_modifier = h ** modifier[0] * k**modifier[1]
                     n_modifier = h ** modifier[2] * k**modifier[3]
