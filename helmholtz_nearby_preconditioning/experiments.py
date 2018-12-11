@@ -69,7 +69,7 @@ def nearby_preconditioning_experiment(V,k,A_pre,A_stoch,n_pre,n_stoch,f,g,
     return all_GMRES_its
 
 def nearby_preconditioning_piecewise_experiment_set(
-        A_pre_type,n_pre_type,num_pieces,seed,num_repeats,
+        A_pre_type,n_pre_type,dim,num_pieces,seed,num_repeats,
         k_list,h_list,noise_master_level_list,noise_modifier_list,
         save_location):
     """Test nearby preconditioning for a range of parameter values.
@@ -84,7 +84,12 @@ def nearby_preconditioning_piecewise_experiment_set(
     A_pre_type - string - options are 'constant', giving A_pre =
     [[1.0,0.0],[0.0,1.0]].
 
-    n_pre_type - string - options are 'constant', giving n_pre = 1.0.
+    n_pre_type - string - options are 'constant', giving n_pre = 1.0;
+    'jump_down' giving n_pre = 2/3 on a central square of side length
+    1/3, and 1 otherwise; and 'jump_up' giving n_pre = 1.5 on a central
+    square of side length 1/3, and 1 otherwise.
+
+    dim - 2 or 3, the dimension of the problem.
 
     num_pieces - see
         helmholtz.coefficients.PieceWiseConstantCoeffGenerator.
@@ -123,9 +128,6 @@ def nearby_preconditioning_piecewise_experiment_set(
 
     if not(isinstance(n_pre_type,str)):
         raise TypeError("Input n_pre_type should be a string")
-    elif n_pre_type is not "constant":
-        raise HelmholtzNotImplementedError(
-            "Currently only implemented n_pre_type = 'constant'.")
 
     if not(isinstance(k_list,list)):
         raise TypeError("Input k_list should be a list.")
@@ -184,25 +186,47 @@ def nearby_preconditioning_piecewise_experiment_set(
             "Input noise_modifier_list\
             should be a list of 4-tuples of floats.")
 
-    if A_pre_type is "constant":
-        A_pre = fd.as_matrix([[1.0,0.0],[0.0,1.0]])
 
-    if n_pre_type is "constant":
-        n_pre = 1.0
     
     for k in k_list:
         for h_tuple in h_list:
             h = h_tuple[0] * k**h_tuple[1]
-            mesh_points = hh_utils.h_to_mesh_points(h)
+            mesh_points = hh_utils.h_to_num_cells(h,dim)
             mesh = fd.UnitSquareMesh(mesh_points,mesh_points)
             V = fd.FunctionSpace(mesh, "CG", 1)
-
             f = 0.0
             d = fd.as_vector([1.0/fd.sqrt(2.0),1.0/fd.sqrt(2.0)])
             x = fd.SpatialCoordinate(mesh)
             nu = fd.FacetNormal(mesh)
             g=1j*k*fd.exp(1j*k*fd.dot(x,d))*(fd.dot(d,nu)-1)
 
+            if A_pre_type is "constant":
+                A_pre = fd.as_matrix([[1.0,0.0],[0.0,1.0]])
+
+            if n_pre_type is "constant":
+                n_pre = 1.0
+                
+            elif n_pre_type is "jump_down":
+                n_pre = 1.0\
+                        + hh_utils.nd_indicator(
+                            x,-1.0/3.0,
+                            np.array([[1.0/3.0,2.0/3.0],
+                                      [1.0/3.0,2.0/3.0],
+                                      [1.0/3.0,2.0/3.0]]
+                            )
+                        )
+                
+            elif n_pre_type is "jump_up":
+                n_pre = 1.0\
+                        + hh_utils.nd_indicator(
+                            x,1.0/2.0,
+                            np.array([[1.0/3.0,2.0/3.0],
+                                      [1.0/3.0,2.0/3.0],
+                                      [1.0/3.0,2.0/3.0]]
+                            )
+                        )
+
+            
             for noise_master in noise_master_level_list:
                 A_noise_master = noise_master[0]
                 n_noise_master = noise_master[1]
@@ -215,6 +239,7 @@ def nearby_preconditioning_piecewise_experiment_set(
                     n_modifier = h ** modifier[2] * k**modifier[3]
                     A_noise_level = A_noise_master * A_modifier
                     n_noise_level = n_noise_master * n_modifier
+                    
                     A_stoch = coeff.PiecewiseConstantCoeffGenerator(
                         mesh,num_pieces,A_noise_level,A_pre,[2,2])
                     n_stoch = coeff.PiecewiseConstantCoeffGenerator(

@@ -1,10 +1,12 @@
-import helmholtz.problems as hh
+import helmholtz_firedrake.problems as hh
 import firedrake as fd
 import numpy as np
-import nearby_preconditioning.experiments as nbex
-from helmholtz.coefficients import PiecewiseConstantCoeffGenerator
-import helmholtz.utils as hh_utils
+import helmholtz_nearby_preconditioning.experiments as nbex
+from helmholtz_firedrake.coefficients import PiecewiseConstantCoeffGenerator
+import helmholtz_firedrake.utils as hh_utils
 import copy
+from os import mkdir
+from shutil import rmtree
 
 def test_coeff_definition_error():
     """Test that a coeff with too many pieces is caught."""
@@ -67,9 +69,41 @@ def test_coeff_definition_no_error():
 def test_nearby_preconditioning_set_no_errors():
     """Tests that a basic run of a set doesn't produce any errors."""
 
+    mkdir('./tmp')
+    
     nbex.nearby_preconditioning_piecewise_experiment_set(
-        'constant','constant',2,1,2,[10.0],[(1.0,-1.0)],[(0.01,0.1)],
+        'constant','constant',2,2,1,2,[10.0],[(1.0,-1.0)],[(0.01,0.1)],
         [(0.0,0.0,0.0,0.0)],
-        '/home/owen/code/helmholtz-firedrake/testing-output/for-pytest/'
+        './tmp/'
     )
+
+    rmtree('./tmp')
+
+def test_nearby_preconditioning_jump_up_set_no_errors():
+    """Tests a run with n jumping up produces no errors."""
+
+    mkdir('./tmp')
+
+    nbex.nearby_preconditioning_piecewise_experiment_set(
+        'constant','jump_up',2,2,1,2,[10.0],[(1.0,-1.0)],[(0.01,0.1)],
+        [(0.0,0.0,0.0,0.0)],
+        './tmp/'
+    )
+
+    rmtree('./tmp')
+
+def test_nearby_preconditioning_jump_down_set_no_errors():
+    """Tests a run with n jumping down produces no errors."""
+
+    mkdir('./tmp')
+
+    nbex.nearby_preconditioning_piecewise_experiment_set(
+        'constant','jump_down',2,2,1,2,[10.0],[(1.0,-1.0)],[(0.01,0.1)],
+        [(0.0,0.0,0.0,0.0)],
+        './tmp/'
+    )
+
+    rmtree('./tmp')
+
+    
 
