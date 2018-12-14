@@ -72,7 +72,7 @@ def test_nearby_preconditioning_set_no_errors():
     mkdir('./tmp')
     
     nbex.nearby_preconditioning_piecewise_experiment_set(
-        'constant','constant',2,2,1,2,[10.0],[(1.0,-1.0)],[(0.01,0.1)],
+        'constant','constant',2,2,1,2,[10.0],[(1.0,-1.0)],[1],[(0.01,0.1)],
         [(0.0,0.0,0.0,0.0)],
         './tmp/'
     )
@@ -85,7 +85,7 @@ def test_nearby_preconditioning_jump_up_set_no_errors():
     mkdir('./tmp')
 
     nbex.nearby_preconditioning_piecewise_experiment_set(
-        'constant','jump_up',2,2,1,2,[10.0],[(1.0,-1.0)],[(0.01,0.1)],
+        'constant','jump_up',2,2,1,2,[10.0],[(1.0,-1.0)],[1],[(0.01,0.1)],
         [(0.0,0.0,0.0,0.0)],
         './tmp/'
     )
@@ -98,12 +98,23 @@ def test_nearby_preconditioning_jump_down_set_no_errors():
     mkdir('./tmp')
 
     nbex.nearby_preconditioning_piecewise_experiment_set(
-        'constant','jump_down',2,2,1,2,[10.0],[(1.0,-1.0)],[(0.01,0.1)],
+        'constant','jump_down',2,2,1,2,[10.0],[(1.0,-1.0)],[1],[(0.01,0.1)],
         [(0.0,0.0,0.0,0.0)],
         './tmp/'
     )
 
     rmtree('./tmp')
 
+def test_nearby_preconditioning_set_higher_p_no_errors():
+    """Tests that a set with higher p doesn't produce any errors."""
+
+    mkdir('./tmp')
     
+    nbex.nearby_preconditioning_piecewise_experiment_set(
+        'constant','constant',2,2,1,2,[10.0],[(1.0,-1.0)],[2],[(0.01,0.1)],
+        [(0.0,0.0,0.0,0.0)],
+        './tmp/'
+    )
+
+    rmtree('./tmp')
 
