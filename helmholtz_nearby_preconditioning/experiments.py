@@ -260,6 +260,7 @@ def nearby_preconditioning_piecewise_experiment_set(
                                 GMRES_its,save_location,
                                 {'k' : k,
                                  'h_tuple' : h_tuple,
+                                 'p' : p,
                                  'num_pieces' : num_pieces,
                                  'A_pre_type' : A_pre_type,
                                  'n_pre_type' : n_pre_type,
