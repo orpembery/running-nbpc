@@ -70,7 +70,7 @@ def nearby_preconditioning_experiment(V,k,A_pre,A_stoch,n_pre,n_stoch,f,g,
 
 def nearby_preconditioning_piecewise_experiment_set(
         A_pre_type,n_pre_type,dim,num_pieces,seed,num_repeats,
-        k_list,h_list,noise_master_level_list,noise_modifier_list,
+        k_list,h_list,p_list,noise_master_level_list,noise_modifier_list,
         save_location):
     """Test nearby preconditioning for a range of parameter values.
 
@@ -106,6 +106,10 @@ def nearby_preconditioning_piecewise_experiment_set(
     values of the mesh size h for which we will run experiments. h =
     t[0] * k**t[1].
 
+    p_list - list of positive ints, the polynomial degrees to run
+    experiments for. Degree >= 5 will be very slow because of the
+    implementation in Firedrake.
+
     noise_master_level_list - list of 2-tuples, where each entry of the
     tuple is a positive float.  This defines the values of base_noise_A
     and base_noise_n to be used in the experiments. Call a given tuple
@@ -118,6 +122,7 @@ def nearby_preconditioning_piecewise_experiment_set(
     h**t[2] * k**t[3].
 
     save_location - see utils.write_repeats_to_csv.
+
     """
 
     if not(isinstance(A_pre_type,str)):
@@ -190,78 +195,79 @@ def nearby_preconditioning_piecewise_experiment_set(
     
     for k in k_list:
         for h_tuple in h_list:
-            h = h_tuple[0] * k**h_tuple[1]
-            mesh_points = hh_utils.h_to_num_cells(h,dim)
-            mesh = fd.UnitSquareMesh(mesh_points,mesh_points)
-            V = fd.FunctionSpace(mesh, "CG", 1)
-            f = 0.0
-            d = fd.as_vector([1.0/fd.sqrt(2.0),1.0/fd.sqrt(2.0)])
-            x = fd.SpatialCoordinate(mesh)
-            nu = fd.FacetNormal(mesh)
-            g=1j*k*fd.exp(1j*k*fd.dot(x,d))*(fd.dot(d,nu)-1)
+            for p in p_list:
+                h = h_tuple[0] * k**h_tuple[1]
+                mesh_points = hh_utils.h_to_num_cells(h,dim)
+                mesh = fd.UnitSquareMesh(mesh_points,mesh_points)
+                V = fd.FunctionSpace(mesh, "CG", p)
+                f = 0.0
+                d = fd.as_vector([1.0/fd.sqrt(2.0),1.0/fd.sqrt(2.0)])
+                x = fd.SpatialCoordinate(mesh)
+                nu = fd.FacetNormal(mesh)
+                g=1j*k*fd.exp(1j*k*fd.dot(x,d))*(fd.dot(d,nu)-1)
 
-            if A_pre_type is "constant":
-                A_pre = fd.as_matrix([[1.0,0.0],[0.0,1.0]])
+                if A_pre_type is "constant":
+                    A_pre = fd.as_matrix([[1.0,0.0],[0.0,1.0]])
 
-            if n_pre_type is "constant":
-                n_pre = 1.0
-                
-            elif n_pre_type is "jump_down":
-                n_pre = 1.0\
-                        + hh_utils.nd_indicator(
-                            x,-1.0/3.0,
-                            np.array([[1.0/3.0,2.0/3.0],
-                                      [1.0/3.0,2.0/3.0],
-                                      [1.0/3.0,2.0/3.0]]
+                if n_pre_type is "constant":
+                    n_pre = 1.0
+
+                elif n_pre_type is "jump_down":
+                    n_pre = 1.0\
+                            + hh_utils.nd_indicator(
+                                x,-1.0/3.0,
+                                np.array([[1.0/3.0,2.0/3.0],
+                                          [1.0/3.0,2.0/3.0],
+                                          [1.0/3.0,2.0/3.0]]
+                                )
                             )
-                        )
-                
-            elif n_pre_type is "jump_up":
-                n_pre = 1.0\
-                        + hh_utils.nd_indicator(
-                            x,1.0/2.0,
-                            np.array([[1.0/3.0,2.0/3.0],
-                                      [1.0/3.0,2.0/3.0],
-                                      [1.0/3.0,2.0/3.0]]
+
+                elif n_pre_type is "jump_up":
+                    n_pre = 1.0\
+                            + hh_utils.nd_indicator(
+                                x,1.0/2.0,
+                                np.array([[1.0/3.0,2.0/3.0],
+                                          [1.0/3.0,2.0/3.0],
+                                          [1.0/3.0,2.0/3.0]]
+                                )
                             )
-                        )
 
-            
-            for noise_master in noise_master_level_list:
-                A_noise_master = noise_master[0]
-                n_noise_master = noise_master[1]
 
-                for modifier in noise_modifier_list:
-                    if fd.COMM_WORLD.rank == 0:
-                        print(k,h_tuple,noise_master,modifier)
-                    
-                    A_modifier = h ** modifier[0] * k**modifier[1]
-                    n_modifier = h ** modifier[2] * k**modifier[3]
-                    A_noise_level = A_noise_master * A_modifier
-                    n_noise_level = n_noise_master * n_modifier
-                    
-                    A_stoch = coeff.PiecewiseConstantCoeffGenerator(
-                        mesh,num_pieces,A_noise_level,A_pre,[2,2])
-                    n_stoch = coeff.PiecewiseConstantCoeffGenerator(
-                        mesh,num_pieces,n_noise_level,n_pre,[1])
-                    np.random.seed(seed)
-                    
-                    GMRES_its = nearby_preconditioning_experiment(
-                        V,k,A_pre,A_stoch,n_pre,n_stoch,f,g,num_repeats)
+                for noise_master in noise_master_level_list:
+                    A_noise_master = noise_master[0]
+                    n_noise_master = noise_master[1]
 
-                    if fd.COMM_WORLD.rank == 0:
-                        hh_utils.write_GMRES_its(
-                            GMRES_its,save_location,
-                            {'k' : k,
-                             'h_tuple' : h_tuple,
-                             'num_pieces' : num_pieces,
-                             'A_pre_type' : A_pre_type,
-                             'n_pre_type' : n_pre_type,
-                             'noise_master' : noise_master,
-                             'modifier' : modifier,
-                             'num_repeats' : num_repeats
-                             }
-                            )
+                    for modifier in noise_modifier_list:
+                        if fd.COMM_WORLD.rank == 0:
+                            print(k,h_tuple,noise_master,modifier)
+
+                        A_modifier = h ** modifier[0] * k**modifier[1]
+                        n_modifier = h ** modifier[2] * k**modifier[3]
+                        A_noise_level = A_noise_master * A_modifier
+                        n_noise_level = n_noise_master * n_modifier
+
+                        A_stoch = coeff.PiecewiseConstantCoeffGenerator(
+                            mesh,num_pieces,A_noise_level,A_pre,[2,2])
+                        n_stoch = coeff.PiecewiseConstantCoeffGenerator(
+                            mesh,num_pieces,n_noise_level,n_pre,[1])
+                        np.random.seed(seed)
+
+                        GMRES_its = nearby_preconditioning_experiment(
+                            V,k,A_pre,A_stoch,n_pre,n_stoch,f,g,num_repeats)
+
+                        if fd.COMM_WORLD.rank == 0:
+                            hh_utils.write_GMRES_its(
+                                GMRES_its,save_location,
+                                {'k' : k,
+                                 'h_tuple' : h_tuple,
+                                 'num_pieces' : num_pieces,
+                                 'A_pre_type' : A_pre_type,
+                                 'n_pre_type' : n_pre_type,
+                                 'noise_master' : noise_master,
+                                 'modifier' : modifier,
+                                 'num_repeats' : num_repeats
+                                 }
+                                )
 
 def nearby_preconditioning_experiment_gamma(k_range,n_lower_bound,n_var_base,
                                       n_var_k_power_range,num_repeats):
