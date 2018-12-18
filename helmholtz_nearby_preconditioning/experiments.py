@@ -213,9 +213,9 @@ def nearby_preconditioning_piecewise_experiment_set(
                     n_pre = 1.0
 
                 elif n_pre_type is "jump_down":
-                    n_pre = 1.0\
+                    n_pre = (2.0/3.0)\
                             + hh_utils.nd_indicator(
-                                x,-1.0/3.0,
+                                x,1.0/3.0,
                                 np.array([[1.0/3.0,2.0/3.0],
                                           [1.0/3.0,2.0/3.0],
                                           [1.0/3.0,2.0/3.0]]
@@ -223,9 +223,9 @@ def nearby_preconditioning_piecewise_experiment_set(
                             )
 
                 elif n_pre_type is "jump_up":
-                    n_pre = 1.0\
+                    n_pre = 1.5\
                             + hh_utils.nd_indicator(
-                                x,1.0/2.0,
+                                x,-1.0/2.0,
                                 np.array([[1.0/3.0,2.0/3.0],
                                           [1.0/3.0,2.0/3.0],
                                           [1.0/3.0,2.0/3.0]]
