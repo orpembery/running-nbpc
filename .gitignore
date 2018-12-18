@@ -1,6 +1,5 @@
 *.err
 *.out
 *.slurm
-*.csv
 *~
 *__/
