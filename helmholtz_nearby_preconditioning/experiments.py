@@ -333,7 +333,8 @@ def nearby_preconditioning_experiment_gamma(k_range,n_lower_bound,n_var_base,
             
             hh_utils.write_GMRES_its(GMRES_its,save_location,info)
 
-def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,mean_type,use_nbpc,GMRES_threshold):
+def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,
+                        mean_type,use_nbpc,GMRES_threshold):
     """Performs QMC for the Helmholtz Eqn with nearby preconditioning.
 
     Mention: expansion, n only, unit square, the idea of the algorithm.
@@ -372,10 +373,10 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,mean_type,use_nbpc,GM
 
     time - a 2-tuple of non-negative floats. time[0] is the amount of
     time taken to calculate the LU decompositions, and time[1] is the
-    amount of time taken performing GMRES solves.
+    amount of time taken performing GMRES solves. NOT YET IMPLEMTENTED.
 
     points_info - a pandas DataFrame of length M, where each row
-    corresponds to a QMC point. The columns of this dataframe are 'loc'
+    corresponds to a QMC point. The columns of this dataframe are 'sto_loc'
     - a numpy array giving the location of the point in stochastic
     space; 'LU' - a boolean stating whether the system matric
     corresponding to that point was factorised into its LU
@@ -384,13 +385,15 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,mean_type,use_nbpc,GM
     point. The points are ordered (from top to bottom) in the order they
     were tackled by the algorithm.
     """
-    scaling = lambda_mult * np.array(list(range(1,J+1)),dtype=float)**(-1.0-delta)
+    scaling = lambda_mult * np.array(list(range(1,J+1)),
+                                     dtype=float)**(-1.0-delta)
     
     # Generate QMC points on [-1/2,1/2]^J using Dirk Nuyens' code
     qmc_generator = latticeseq_b2.latticeseq_b2(s=J)
 
     points = []
-    
+
+    # The following range will have M as its last term
     for m in range((M+1)):
         points.append(qmc_generator.calc_block(m))
 
@@ -400,11 +403,6 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,mean_type,use_nbpc,GM
         qmc_points = np.vstack((qmc_points,points[ii]))
 
     qmc_points -= 0.5
-       
-    centre = np.zeros((1,J))
-
-    # Order points relative to the origin
-    order_points(qmc_points,centre,scaling)
     
     # Create the coefficient
     if mean_type is 'constant':
@@ -417,75 +415,83 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,mean_type,use_nbpc,GM
     
     # Create the problem
     V = fd.FunctionSpace(mesh,"CG",1)
-    # The Following lines are a hack because deepcopy isn't implemented for
-    # ufl expressions (in general at least)
-    kl_like.sample()
-    n_pre_instance = coeff.UniformKLLikeCoeff(mesh,J,delta,lambda_mult,n_0,np.array(deepcopy(kl_like.current_point),ndmin=2))
-    n_pre_instance.sample()
-    kl_like.reinitialise()
-    prob = hh.StochasticHelmholtzProblem(k,V,None,kl_like,**{'n_pre' : n_pre_instance.coeff})
+    # The Following lines are a hack because deepcopy isn't implemented
+    # for ufl expressions (in general at least), and creating an
+    # instance of the coefficient with particular 'stochastic
+    # coordinates' is the easiest way to get the preconditioning
+    # coefficient.
+    n_pre_instance = coeff.UniformKLLikeCoeff(mesh,J,delta,lambda_mult,
+                                              n_0,
+                                              np.array(deepcopy(
+                                                  kl_like.\
+                                                  stochastic_points[0,:]),
+                                                       ndmin=2))
+    prob = hh.StochasticHelmholtzProblem(k,V,None,kl_like,
+                                         **{'n_pre' : n_pre_instance.coeff,
+                                            'A_pre' :
+                                            fd.as_matrix([[1.0,0.0],[0.0,1.0]])
+                                         })
 
-    prob.n_stoch.sample()
-
-    points_info_columns = ['loc','LU','GMRES']
+    points_info_columns = ['sto_loc','LU','GMRES']
     points_info = pd.DataFrame(None,columns=points_info_columns)
     
+    centre = np.zeros((1,J))
+
+    # Order points relative to the origin
+    order_points(prob.n_stoch.stochastic_points,centre,scaling)
+
+    prob.n_stoch.first_row_assign()
+
+    # Do solve at first point
+    prob.solve()
+    LU = True
+    
+    # The total number of points we have 'left' is
+    # prob.n_stoch.stochastic_points.shape[0]
     while prob.n_stoch.stochastic_points.shape[0] > 0:
 
-        # Do solve at centre
-        prob.solve()
-        LU = True
-        print("solved",flush=True)
-        # TIMEIT, TIME EVERYTHING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11
-        
-        while (prob.GMRES_its <= GMRES_threshold) and (prob.n_stoch.stochastic_points.shape[0] > 1):
+        # Insert timing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-            # Copy details into output dataframe and timings!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            temp_df = pd.DataFrame([[prob.n_stoch.current_point,LU,prob.GMRES_its]])
-            points_info = points_info.append(temp_df,ignore_index=True)
-            
-            # This saves doing a solve that we're never going to use
-            if use_nbpc:
-           
-                # Precondition next points
-                prob.n_stoch.sample()
-                prob.solve()
-                print("solved",flush=True)
-                LU = False
-
-        # When we exited because GMRES iterations got too big, or we're
-        # not using nbpc, recalculate preconditioner.
+        # If GMRES iterations were too big, or we're not using nbpc,
+        # recalculate preconditioner.
         if (use_nbpc is False) or (prob.GMRES_its > GMRES_threshold):
-            
-            centre = prob.n_stoch.stochastic_points[0,:]
-            order_points(prob.n_stoch.stochastic_points,centre,scaling)
 
-            prob.n_stoch.sample()
+            centre = prob.n_stoch.current_point()
+            order_points(prob.n_stoch.stochastic_points,centre,scaling)
     
             # Update the preconditioner
-            n_pre_instance = coeff.UniformKLLikeCoeff(mesh,J,delta,lambda_mult,n_0,np.array(deepcopy(prob.n_stoch.current_point),ndmin=2))
-            n_pre_instance.sample()
+            n_pre_instance = coeff.UniformKLLikeCoeff(mesh,J,delta,lambda_mult,
+                                                      n_0,
+                                                      np.array(
+                                                          deepcopy(prob.n_stoch.current_point()),
+                                                          ndmin=2))
             prob.set_n_pre(n_pre_instance.coeff)
 
-            # Do solve at new preconditioning point
-            # And Time it #11111111111111111111111111111111111111111111111111111111111
+            # Do solve at new centre point
             prob.solve()
-            print("solved",flush=True)
             LU = True
 
-        # When we exited because we only have one point left in the list
-        # (and we'll have already done the solve for that point), delete
-        # it.
-        elif prob.n_stoch.stochastic_points.shape[0] == 1:
-            prob.n_stoch.stochastic_points = prob.n_stoch.stochastic_points[1:,:]
+        # Copy details of last solve into output dataframe
+        # Insert timings into output !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        temp_df = pd.DataFrame(
+            [[prob.n_stoch.current_point(),LU,prob.GMRES_its]],columns=points_info_columns)
+        points_info = points_info.append(temp_df,ignore_index=True)
+
+        # Select next point, and attempt a solve, exit if points gone.
+        try:
+            prob.sample()
+            prob.solve()
+            LU = False
+        except coeff.SamplingError:
+            pass
+            
+    return points_info
 
 def order_points(points,centre,scaling):
     """Orders the points in their distance to centre.
 
     Ordering is done with the dimensions scaled by the elements of
     scaling.
-    
-    WRITE MORE HERE AND MAKE IT BETTER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111
 
     Parameters:
 
@@ -499,7 +505,7 @@ def order_points(points,centre,scaling):
 
     Output
 
-    Rearranges points IN PLACE to reflect the ordering. IS THIS THE RIGHT TERMINOLOGY?
+    Rearranges points IN PLACE to reflect the ordering.
     """
     
     distances = np.abs(points-centre) @ scaling
