@@ -118,3 +118,29 @@ def test_nearby_preconditioning_set_higher_p_no_errors():
 
     rmtree('./tmp')
 
+def test_qmc_works():
+    """This just tests that the code runs."""
+
+    np.random.seed(7)
+    
+    h_spec = (1.0,-1.0)
+
+    dim = 2
+
+    J = 4
+
+    M = 4
+
+    k = 10.0
+
+    delta = 1.0
+
+    lambda_mult = 1.0
+
+    mean_type = 'constant'
+
+    use_nbpc = True
+
+    GMRES_threshold = 10
+    
+    nbex.qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,mean_type,use_nbpc,GMRES_threshold)
