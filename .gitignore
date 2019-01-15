@@ -3,3 +3,5 @@
 *.slurm
 *~
 *__/
+*pyc
+*latticeseq_b2*
