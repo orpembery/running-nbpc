@@ -447,22 +447,21 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,
 
     # Order points relative to the origin
     order_points(prob.n_stoch.stochastic_points,centre,scaling)
-
+    LU = np.nan
     prob.n_stoch.first_row_assign()
 
-    # Do solve at first point
-    prob.solve()
-    LU = True
+    num_solves = 0
     
     # The total number of points we have 'left' is
     # prob.n_stoch.stochastic_points.shape[0]
     while prob.n_stoch.stochastic_points.shape[0] > 0:
 
-        # Insert timing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+        prob.solve()
+        num_solves += 1
+        
         # If GMRES iterations were too big, or we're not using nbpc,
         # recalculate preconditioner.
-        if (use_nbpc is False) or (prob.GMRES_its > GMRES_threshold):
+        if (prob.GMRES_its > GMRES_threshold) or (use_nbpc is False):
 
             centre = prob.n_stoch.current_point()
             order_points(prob.n_stoch.stochastic_points,centre,scaling)
@@ -475,24 +474,18 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,
                                                           ndmin=2))
             prob.set_n_pre(n_pre_instance.coeff)
 
-            # Do solve at new centre point
-            prob.solve()
-            LU = True
+        if (prob.GMRES_its <= GMRES_threshold) or (use_nbpc is False):
+            # Copy details of last solve into output dataframe
+            temp_df = pd.DataFrame(
+                [[prob.n_stoch.current_point(),LU,prob.GMRES_its]],columns=points_info_columns)
+            points_info = points_info.append(temp_df,ignore_index=True)
 
-        # Copy details of last solve into output dataframe
-        # Insert timings into output !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        temp_df = pd.DataFrame(
-            [[prob.n_stoch.current_point(),LU,prob.GMRES_its]],columns=points_info_columns)
-        points_info = points_info.append(temp_df,ignore_index=True)
+            try:
+                prob.sample()
+            except coeff.SamplingError:
+                pass
 
-        # Select next point, and attempt a solve, exit if points gone.
-        try:
-            prob.sample()
-            prob.solve()
-            LU = False
-        except coeff.SamplingError:
-            pass
-
+        
     # Now trying to see if I can do stuff with timings
     # Try uing the re regular expression package
     
@@ -500,10 +493,14 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,
     try:
         open('tmp.txt','r')
         print('SUCCESS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        print(num_solves)
     except:
         pass
-        
+    
     return points_info
+
+
+    
 
 def order_points(points,centre,scaling):
     """Orders the points in their distance to centre.
