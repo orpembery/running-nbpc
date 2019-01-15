@@ -37,7 +37,7 @@ def plt_gmres2(n_pre_type,noise_masters,ks,modifier):
     # Idea for old plotting script - loop over modifiers, loop over k, for each one, plot it
     # Idea for new script, loop over noise_masters, loop over k, for each one, plot it
     """Modifier must be a string (and noise_master)"""
-    cols = ['k','r','b','g']
+    cols = ['k','r','b','g','k','r','b','g','k','r','b','g','k','r','b','g']
     markers = ['o','v','^']
     handles = []
     for ii in range(len(noise_masters)):
@@ -82,11 +82,13 @@ def plt_gmres2(n_pre_type,noise_masters,ks,modifier):
 n_pre_type = 'constant'
 
 #noise_master = '(0.1, 0.0)' # To use with A
-noise_masters = ['(0.0, 0.1)','(0.0, 0.05)','(0.0, 0.01)'] # To use with n
+noise_masters = ['(0.0, 0.0001)','(0.0, 0.001)','(0.0, 0.002)','(0.0, 0.004)','(0.0, 0.006)','(0.0, 0.008)','(0.0, 0.01)','(0.0, 0.1)'] # To use with n
 
 #ks = [10.0,20.0,30.0,50.0,60.0,70.0,80.0,90.0,100.0]
 
-ks = [10.0,20.0,30.0,60.0,70.0,80.0,90.0,100.0]
+#ks = [10.0,20.0,30.0,60.0,70.0,80.0,90.0,100.0]
+
+ks = [20.0,40.0,60.0,80.0]
 
 modifier = '(0.0, 0.0, 0.0, 0.0)' # to use with n
 
