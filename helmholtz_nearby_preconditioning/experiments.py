@@ -428,15 +428,9 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,
     # instance of the coefficient with particular 'stochastic
     # coordinates' is the easiest way to get the preconditioning
     # coefficient.
-    n_pre_instance = coeff.UniformKLLikeCoeff(mesh,J,delta,lambda_mult,
-                                              n_0,
-                                              np.array(deepcopy(
-                                                  kl_like.\
-                                                  stochastic_points[0,:]),
-                                                       ndmin=2))
+
     prob = hh.StochasticHelmholtzProblem(k,V,None,kl_like,
-                                         **{'n_pre' : n_pre_instance.coeff,
-                                            'A_pre' :
+                                         **{'A_pre' :
                                             fd.as_matrix([[1.0,0.0],[0.0,1.0]])
                                          })
 
@@ -450,6 +444,8 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,
     LU = np.nan
     prob.n_stoch.first_row_assign()
 
+    update_pc(prob,mesh,J,delta,lambda_mult,n_0)
+    
     num_solves = 0
     
     # The total number of points we have 'left' is
@@ -458,32 +454,38 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,
 
         prob.solve()
         num_solves += 1
-        
-        # If GMRES iterations were too big, or we're not using nbpc,
-        # recalculate preconditioner.
-        if (prob.GMRES_its > GMRES_threshold) or (use_nbpc is False):
 
-            centre = prob.n_stoch.current_point()
-            order_points(prob.n_stoch.stochastic_points,centre,scaling)
-    
-            # Update the preconditioner
-            n_pre_instance = coeff.UniformKLLikeCoeff(mesh,J,delta,lambda_mult,
-                                                      n_0,
-                                                      np.array(
-                                                          deepcopy(prob.n_stoch.current_point()),
-                                                          ndmin=2))
-            prob.set_n_pre(n_pre_instance.coeff)
+        if use_nbpc is True:
+            # If GMRES iterations were too big, or we're not using nbpc,
+            # recalculate preconditioner.
+            if (prob.GMRES_its > GMRES_threshold):
+                
+                new_centre(prob,mesh,J,delta,lambda_mult,n_0,scaling)
+               
 
-        if (prob.GMRES_its <= GMRES_threshold) or (use_nbpc is False):
-            # Copy details of last solve into output dataframe
+            else:               
+                # Copy details of last solve into output dataframe
+                temp_df = pd.DataFrame(
+                    [[prob.n_stoch.current_point(),LU,prob.GMRES_its]],columns=points_info_columns)
+                points_info = points_info.append(temp_df,ignore_index=True)
+
+                try:
+                    prob.sample()
+                except coeff.SamplingError:
+                    pass
+
+        else: # Not using NBPC
             temp_df = pd.DataFrame(
                 [[prob.n_stoch.current_point(),LU,prob.GMRES_its]],columns=points_info_columns)
             points_info = points_info.append(temp_df,ignore_index=True)
 
             try:
                 prob.sample()
+                new_centre(prob,mesh,J,delta,lambda_mult,n_0,scaling)
             except coeff.SamplingError:
                 pass
+            
+
 
         
     # Now trying to see if I can do stuff with timings
@@ -499,7 +501,21 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,
     
     return points_info
 
+def update_pc(prob,mesh,J,delta,lambda_mult,n_0):
+    # Update the preconditioner
+    n_pre_instance = coeff.UniformKLLikeCoeff(mesh,J,delta,lambda_mult,
+                                              n_0,
+                                              np.array(
+                                                  deepcopy(prob.n_stoch.current_point()),
+                                                  ndmin=2))
+    
+    prob.set_n_pre(n_pre_instance.coeff)
 
+def new_centre(prob,mesh,J,delta,lambda_mult,n_0,scaling):
+    centre = prob.n_stoch.current_point()
+    order_points(prob.n_stoch.stochastic_points,centre,scaling)
+    
+    update_pc(prob,mesh,J,delta,lambda_mult,n_0)
     
 
 def order_points(points,centre,scaling):
