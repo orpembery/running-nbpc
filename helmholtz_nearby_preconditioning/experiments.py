@@ -374,6 +374,13 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,
     point, and use this to precondition GMRES (which will converge in
     one step).
 
+    point_generation_method - either 'qmc' or 'mc'. 'qmc' means a QMC
+    lattice rule is used to generate the points, whereas 'mc' means the
+    points are randomly generated according to a uniform distribution on
+    the cube.
+
+    seed - seed with which to start the randomness.
+
     GMRES_threshold - positive int - the number of GMRES iteration we
     will tolerate before we 'redo' the preconditioning.
 
@@ -392,25 +399,30 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,
     GMRES iterations it took to achieve convergence at this QMC
     point. The points are ordered (from top to bottom) in the order they
     were tackled by the algorithm.
+
     """
     scaling = lambda_mult * np.array(list(range(1,J+1)),
                                      dtype=float)**(-1.0-delta)
-    
-    # Generate QMC points on [-1/2,1/2]^J using Dirk Nuyens' code
-    qmc_generator = latticeseq_b2.latticeseq_b2(s=J)
 
-    points = []
+    if point_generation_method is 'qmc':
+        # Generate QMC points on [-1/2,1/2]^J using Dirk Nuyens' code
+        qmc_generator = latticeseq_b2.latticeseq_b2(s=J)
 
-    # The following range will have M as its last term
-    for m in range((M+1)):
-        points.append(qmc_generator.calc_block(m))
+        points = []
 
-    qmc_points = points[0]
+        # The following range will have M as its last term
+        for m in range((M+1)):
+            points.append(qmc_generator.calc_block(m))
 
-    for ii in range(1,len(points)):
-        qmc_points = np.vstack((qmc_points,points[ii]))
+        qmc_points = points[0]
 
-    qmc_points -= 0.5
+        for ii in range(1,len(points)):
+            qmc_points = np.vstack((qmc_points,points[ii]))
+
+        qmc_points -= 0.5
+
+    elif points_generation_method is 'mc':
+        qmc_points = np.random.rand(2**M,J)
     
     # Create the coefficient
     if mean_type is 'constant':
@@ -428,15 +440,9 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,
     # instance of the coefficient with particular 'stochastic
     # coordinates' is the easiest way to get the preconditioning
     # coefficient.
-    n_pre_instance = coeff.UniformKLLikeCoeff(mesh,J,delta,lambda_mult,
-                                              n_0,
-                                              np.array(deepcopy(
-                                                  kl_like.\
-                                                  stochastic_points[0,:]),
-                                                       ndmin=2))
+
     prob = hh.StochasticHelmholtzProblem(k,V,None,kl_like,
-                                         **{'n_pre' : n_pre_instance.coeff,
-                                            'A_pre' :
+                                         **{'A_pre' :
                                             fd.as_matrix([[1.0,0.0],[0.0,1.0]])
                                          })
 
@@ -447,52 +453,53 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,
 
     # Order points relative to the origin
     order_points(prob.n_stoch.stochastic_points,centre,scaling)
-
+    LU = np.nan
     prob.n_stoch.first_row_assign()
 
-    # Do solve at first point
-    prob.solve()
-    LU = True
+    update_pc(prob,mesh,J,delta,lambda_mult,n_0)
+    
+    num_solves = 0
     
     # The total number of points we have 'left' is
     # prob.n_stoch.stochastic_points.shape[0]
     while prob.n_stoch.stochastic_points.shape[0] > 0:
 
-        # Insert timing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        prob.solve()
+        num_solves += 1
 
-        # If GMRES iterations were too big, or we're not using nbpc,
-        # recalculate preconditioner.
-        if (use_nbpc is False) or (prob.GMRES_its > GMRES_threshold):
+        if use_nbpc is True:
+            # If GMRES iterations were too big, or we're not using nbpc,
+            # recalculate preconditioner.
+            if (prob.GMRES_its > GMRES_threshold):
+                
+                new_centre(prob,mesh,J,delta,lambda_mult,n_0,scaling)
+               
 
-            centre = prob.n_stoch.current_point()
-            order_points(prob.n_stoch.stochastic_points,centre,scaling)
-    
-            # Update the preconditioner
-            n_pre_instance = coeff.UniformKLLikeCoeff(mesh,J,delta,lambda_mult,
-                                                      n_0,
-                                                      np.array(
-                                                          deepcopy(prob.n_stoch.current_point()),
-                                                          ndmin=2))
-            prob.set_n_pre(n_pre_instance.coeff)
+            else:               
+                # Copy details of last solve into output dataframe
+                temp_df = pd.DataFrame(
+                    [[prob.n_stoch.current_point(),LU,prob.GMRES_its]],columns=points_info_columns)
+                points_info = points_info.append(temp_df,ignore_index=True)
 
-            # Do solve at new centre point
-            prob.solve()
-            LU = True
+                try:
+                    prob.sample()
+                except coeff.SamplingError:
+                    pass
 
-        # Copy details of last solve into output dataframe
-        # Insert timings into output !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        temp_df = pd.DataFrame(
-            [[prob.n_stoch.current_point(),LU,prob.GMRES_its]],columns=points_info_columns)
-        points_info = points_info.append(temp_df,ignore_index=True)
+        else: # Not using NBPC
+            temp_df = pd.DataFrame(
+                [[prob.n_stoch.current_point(),LU,prob.GMRES_its]],columns=points_info_columns)
+            points_info = points_info.append(temp_df,ignore_index=True)
 
-        # Select next point, and attempt a solve, exit if points gone.
-        try:
-            prob.sample()
-            prob.solve()
-            LU = False
-        except coeff.SamplingError:
-            pass
+            try:
+                prob.sample()
+                new_centre(prob,mesh,J,delta,lambda_mult,n_0,scaling)
+            except coeff.SamplingError:
+                pass
+            
 
+
+        
     # Now trying to see if I can do stuff with timings
     # Try uing the re regular expression package
     
@@ -500,10 +507,28 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,
     try:
         open('tmp.txt','r')
         print('SUCCESS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        print(num_solves)
     except:
         pass
-        
+    
     return points_info
+
+def update_pc(prob,mesh,J,delta,lambda_mult,n_0):
+    # Update the preconditioner
+    n_pre_instance = coeff.UniformKLLikeCoeff(mesh,J,delta,lambda_mult,
+                                              n_0,
+                                              np.array(
+                                                  deepcopy(prob.n_stoch.current_point()),
+                                                  ndmin=2))
+    
+    prob.set_n_pre(n_pre_instance.coeff)
+
+def new_centre(prob,mesh,J,delta,lambda_mult,n_0,scaling):
+    centre = prob.n_stoch.current_point()
+    order_points(prob.n_stoch.stochastic_points,centre,scaling)
+    
+    update_pc(prob,mesh,J,delta,lambda_mult,n_0)
+    
 
 def order_points(points,centre,scaling):
     """Orders the points in their distance to centre.
