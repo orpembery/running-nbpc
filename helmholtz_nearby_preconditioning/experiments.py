@@ -341,8 +341,8 @@ def nearby_preconditioning_experiment_gamma(k_range,n_lower_bound,n_var_base,
             
             hh_utils.write_GMRES_its(GMRES_its,save_location,info)
 
-def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,
-                        mean_type,use_nbpc,GMRES_threshold):
+def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,mean_type,
+                        use_nbpc,point_generation_method,seed,GMRES_threshold):
     """Performs QMC for the Helmholtz Eqn with nearby preconditioning.
 
     Mention: expansion, n only, unit square, the idea of the algorithm.
