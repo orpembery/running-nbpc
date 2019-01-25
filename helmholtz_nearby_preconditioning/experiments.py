@@ -374,6 +374,13 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,
     point, and use this to precondition GMRES (which will converge in
     one step).
 
+    point_generation_method - either 'qmc' or 'mc'. 'qmc' means a QMC
+    lattice rule is used to generate the points, whereas 'mc' means the
+    points are randomly generated according to a uniform distribution on
+    the cube.
+
+    seed - seed with which to start the randomness.
+
     GMRES_threshold - positive int - the number of GMRES iteration we
     will tolerate before we 'redo' the preconditioning.
 
@@ -392,25 +399,30 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,
     GMRES iterations it took to achieve convergence at this QMC
     point. The points are ordered (from top to bottom) in the order they
     were tackled by the algorithm.
+
     """
     scaling = lambda_mult * np.array(list(range(1,J+1)),
                                      dtype=float)**(-1.0-delta)
-    
-    # Generate QMC points on [-1/2,1/2]^J using Dirk Nuyens' code
-    qmc_generator = latticeseq_b2.latticeseq_b2(s=J)
 
-    points = []
+    if point_generation_method is 'qmc':
+        # Generate QMC points on [-1/2,1/2]^J using Dirk Nuyens' code
+        qmc_generator = latticeseq_b2.latticeseq_b2(s=J)
 
-    # The following range will have M as its last term
-    for m in range((M+1)):
-        points.append(qmc_generator.calc_block(m))
+        points = []
 
-    qmc_points = points[0]
+        # The following range will have M as its last term
+        for m in range((M+1)):
+            points.append(qmc_generator.calc_block(m))
 
-    for ii in range(1,len(points)):
-        qmc_points = np.vstack((qmc_points,points[ii]))
+        qmc_points = points[0]
 
-    qmc_points -= 0.5
+        for ii in range(1,len(points)):
+            qmc_points = np.vstack((qmc_points,points[ii]))
+
+        qmc_points -= 0.5
+
+    elif points_generation_method is 'mc':
+        qmc_points = np.random.rand(2**M,J)
     
     # Create the coefficient
     if mean_type is 'constant':
