@@ -342,7 +342,7 @@ def nearby_preconditioning_experiment_gamma(k_range,n_lower_bound,n_var_base,
             hh_utils.write_GMRES_its(GMRES_its,save_location,info)
 
 def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,mean_type,
-                        use_nbpc,point_generation_method,seed,GMRES_threshold):
+                        use_nbpc,points_generation_method,seed,GMRES_threshold):
     """Performs QMC for the Helmholtz Eqn with nearby preconditioning.
 
     Mention: expansion, n only, unit square, the idea of the algorithm.
@@ -404,7 +404,7 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,mean_type,
     scaling = lambda_mult * np.array(list(range(1,J+1)),
                                      dtype=float)**(-1.0-delta)
 
-    if point_generation_method is 'qmc':
+    if points_generation_method is 'qmc':
         # Generate QMC points on [-1/2,1/2]^J using Dirk Nuyens' code
         qmc_generator = latticeseq_b2.latticeseq_b2(s=J)
 
