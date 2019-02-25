@@ -1,10 +1,8 @@
 # This is a hack to get PETSc to give me the timings like I want them.
 import sys
-print(sys.argv)
 sys.argv.append('-log_view')
 sys.argv.append('-history')
 sys.argv.append('tmp.txt')
-print(sys.argv)
 
 import firedrake as fd
 import helmholtz_firedrake.problems as hh
@@ -419,11 +417,13 @@ def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,mean_type,
         for ii in range(1,len(points)):
             qmc_points = np.vstack((qmc_points,points[ii]))
 
-        qmc_points -= 0.5
+        
 
     elif points_generation_method is 'mc':
         qmc_points = np.random.rand(2**M,J)
-    
+
+    qmc_points -= 0.5
+        
     # Create the coefficient
     if mean_type is 'constant':
         n_0 = 1.0
