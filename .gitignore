@@ -3,3 +3,6 @@
 *.slurm
 *~
 *__/
+*pyc
+running-scripts/*/
+dev/
