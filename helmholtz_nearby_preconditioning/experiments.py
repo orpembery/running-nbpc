@@ -1,8 +1,19 @@
+# This is a hack to get PETSc to give me the timings like I want them.
+import sys
+print(sys.argv)
+sys.argv.append('-log_view')
+sys.argv.append('-history')
+sys.argv.append('tmp.txt')
+print(sys.argv)
+
 import firedrake as fd
 import helmholtz_firedrake.problems as hh
 import helmholtz_firedrake.coefficients as coeff
 import helmholtz_firedrake.utils as hh_utils
 import numpy as np
+import latticeseq_b2
+from copy import deepcopy
+import pandas as pd
 
 def nearby_preconditioning_experiment(V,k,A_pre,A_stoch,n_pre,n_stoch,f,g,
                                 num_repeats):
@@ -330,208 +341,223 @@ def nearby_preconditioning_experiment_gamma(k_range,n_lower_bound,n_var_base,
             
             hh_utils.write_GMRES_its(GMRES_its,save_location,info)
 
-def special_rhs_for_paper_experiment(k_list,h_power_list,num_pieces,
-                                     noise_level_system_A,noise_level_system_n,
-                                     noise_level_rhs_A,num_system,num_rhs,
-                                     fine_grid_refinement,seed,save_location):
-    """Tests to see if the required condition in the paper holds.
+def qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,mean_type,
+                        use_nbpc,points_generation_method,seed,GMRES_threshold):
+    """Performs QMC for the Helmholtz Eqn with nearby preconditioning.
 
-    For a variety of different Helmholtz systems, and a variety of
-    different special right-hand sides (given by F(v) = (A_rhs
-    \grad(\sum_i \alpha_i \phi_i),\grad v)_{L^2}, where the phi_i are
-    the basis functions for piecewise-affine finite-elements, records
-    the weighted H^1 norm of the finite-element error (approximated by
-    taking the solution on a much finer grid) and the norm of the
-    right-hand side in (H^1_k)'.
+    Mention: expansion, n only, unit square, the idea of the algorithm.
 
     Parameters:
 
-    k_list - list of positive integers - the values of k for which
-    experiments will be done.
+    h_spec - like one entry of h_list in piecewise_experiment_set.
 
-    h_power_list - list of reals defining the dependence of the
-    different values of h upon k. For example, if h_power_list =
-    [-1.0,-1.5] then two sets of experiments will be done, one with h ~
-    k**-1.0 and one with h**-1.5.
+    dim - 2 or 3 - the spatial dimension.
 
-    num_pieces - postive integer - the random coefficients will be
-    piecewise-constant on a num_pieces by num_pieces grid. (See notes in
-    coefficients.PiecewiseConstantCoeffGenerator about the limits on
-    num_pieces.)
+    J - positive int - the length of the KL-like expansion in the
+    definition of n.
 
-    noise_level_system_A - positive real - the size of the random
-    perturbations in the coefficient A defining the Helmholtz problem.
+    M - positive int - 2**M is the number of QMC points to use.
 
-    noise_level_system_n - positive real - the size of the random
-    perturbations in the coefficient n defining the Helmholtz problem.
+    k - positive float - the wavenumber.
 
-    noise_level_rhs_A - positive real - the size of the random
-    perturbations in the coefficient A defining right-hand side.
+    delta - see the definition of delta in
+    helmholtz_firedrake.coefficients.UniformKLLikeCoeff.__init__.
 
-    num_system - positive integer - the number of different system
-    matrices (i.e. A,n) for which to perform experiments.
+    lambda_mult - see the definition of lambda_mult in
+    helmholtz_firedrake.coefficients.UniformKLLikeCoeff.__init__.
 
-    num_rhs - positive integer - the number of different right-hand
-    sides (for each different system) for which to perform experiments.
+    mean_type - one of 'constant', INSERT MORE IN HERE - n_0 in the
+    expansion for n.
 
-    fine_grid_refinement - positive integer - the `true' solution is
-    computed on a very fine grid - this will be a
-    fine_grid_refinement-fold uniform refinement of the finest grid used
-    in any of the computations. (E.g., if fine_grid_refinement = 3, the
-    the grid for computing the `true' solution will have a mesh size
-    2^{-3} = 3-times smaller than the finest grid used in any of the
-    computations.)
+    use_nbpc - Boolean - whether to use nearby preconditioning to speed
+    up the qmc method, or to perform an LU decomposition for each QMC
+    point, and use this to precondition GMRES (which will converge in
+    one step).
 
-    seed - positive integer, not too large. Used to set the random seeds
-    in the generation of the random coefficients.
+    point_generation_method - either 'qmc' or 'mc'. 'qmc' means a QMC
+    lattice rule is used to generate the points, whereas 'mc' means the
+    points are randomly generated according to a uniform distribution on
+    the cube.
 
-    save_location - see helmholtz.utils.write_GMRES_its
-    """
-    
-    smallest_mesh_size_num_points =\
-        h_to_mesh_points(max(k_list)**min(h_power_list))
+    seed - seed with which to start the randomness.
 
-    num_points_fine = smallest_mesh_size_num_points * fine_grid_refinement
-       
-    for k in k_list:
-
-        for h_power in h_power_list:
-
-            storage = np.full((num_system*num_rhs,2),-1.0)
-            
-            # Set up problem so that it can be easily altered
-
-            num_points_coarse = h_to_mesh_points(k**h_power)
-            
-            (prob_coarse,A_rhs_coarse,f_rhs_coarse) =\
-                rhs_paper_problem_setup(num_points_coarse,num_pieces,
-                                        noise_level_system_A,
-                                        noise_level_system_n,noise_level_rhs_A)
-
-            # Set up `fine' problem
-
-            (prob_fine,A_rhs_fine,f_rhs_fine) =\
-                rhs_paper_problem_setup(num_points_fine,num_pieces,
-                                        noise_level_system_A,
-                                        noise_level_system_n,noise_level_rhs_A)
-            
-            for ii_system in range(num_system):
-
-                # What follows with constantly setting seeds is a bit of
-                # a hack - we need to get identical random numbers for
-                # both the coarse and fine problems, and this is the
-                # simplest way to do it (that I can think of).
-
-                # As random seeds, for the system use multiples of 2,
-                # and for the right-hand sides use the odd multiples of
-                # 3 (plus the input argument seed in both cases). Then
-                # no seed is ever used twice.
-                
-                np.random.seed(seed + 2.0*ii_system)
-
-                prob_coarse.A_stoch.sample()
-
-                prob_coarse.n_stoch.sample()
-
-                np.random.seed(seed + 2.0*ii_system)
-
-                prob_fine.A_stoch.sample()
-
-                prob_fine.n_stoch.sample()          
-                
-                for ii_rhs in range(num_rhs):
-
-                    print("k, h_power, system number, rhs number")
-                    print(k, h_power, ii_system, ii_rhs)
-
-                    np.random.seed(seed + 3.0 + 6.0 * ii_rhs)
-
-                    A_rhs_coarse.sample()
-
-                    f_rhs_coarse.assign(np.random.normal(
-                        f_rhs_coarse.vector().array().size))
-
-                    np.random.seed(seed + 3.0 + 6.0 * ii_rhs)
-
-                    A_rhs_fine.sample()
-
-                    f_rhs_fine.assign(np.random.normal(
-                        f_rhs_fine.vector().array().size))
-
-                    prob_coarse.solve()
-
-                    prob_fine.solve()
-
-
-                    u_h_fine = prob_fine.u_h
-                    
-
-                    #need to compute norms using new technology, and then save them to a file
-
-                    # Need to figure out how to attach metadata - Sumatra?
-                    
-          
-def rhs_paper_problem_setup(num_points,num_pieces,noise_level_system_A,
-                            noise_level_system_n,noise_level_rhs_A):
-    """Sets up all the problems for the experiments with a special rhs.
-    
-    Parameters:
-
-    num_points - positive integer - the mesh for the problem will be a
-    num_points by num_points grid.
-
-    num_pieces - see  special_rhs_for_paper_experiment.
-
-    noise_level_system_A - see  special_rhs_for_paper_experiment.
-
-    noise_level_system_n - see  special_rhs_for_paper_experiment.
-
-    noise_level_rhs_A  - see  special_rhs_for_paper_experiment.
-
-    
+    GMRES_threshold - positive int - the number of GMRES iteration we
+    will tolerate before we 'redo' the preconditioning.
 
     Outputs:
 
-    Tuple (prob,A_rhs,f_rhs), where
-    
-    A_rhs - a matrix-valued realisation of
-    PiecewiseConstantCoeffGenerator, defined by the parameters
-    num_pieces and noise_level_rhs_A.
+    time - a 2-tuple of non-negative floats. time[0] is the amount of
+    time taken to calculate the LU decompositions, and time[1] is the
+    amount of time taken performing GMRES solves. NOT YET IMPLEMTENTED.
 
-    f_rhs - a firedrake Function, initialised as all zeros.
+    points_info - a pandas DataFrame of length M, where each row
+    corresponds to a QMC point. The columns of this dataframe are 'sto_loc'
+    - a numpy array giving the location of the point in stochastic
+    space; 'LU' - a boolean stating whether the system matric
+    corresponding to that point was factorised into its LU
+    factorisation; and 'GMRES' - a non-negative int giving the number of
+    GMRES iterations it took to achieve convergence at this QMC
+    point. The points are ordered (from top to bottom) in the order they
+    were tackled by the algorithm.
 
-    prob - a StochasticHelmholtzProblem with random coefficients defined
-    by the parameters num_points, noise_level_system_A, and
-    noise_level_system_n, and with a special right-hand side given by
-    A_rhs and f_rhs.
     """
+    scaling = lambda_mult * np.array(list(range(1,J+1)),
+                                     dtype=float)**(-1.0-delta)
 
-    mesh = fd.UnitSquareMesh(numpoints,num_points)
+    if points_generation_method is 'qmc':
+        # Generate QMC points on [-1/2,1/2]^J using Dirk Nuyens' code
+        qmc_generator = latticeseq_b2.latticeseq_b2(s=J)
 
-    A_system = coeff.PiecewiseConstantCoeffGenerator(mesh,num_pieces,
-                                                     noise_level_system_A,
-                                                     as_matrix(
-                                                         [[1.0,0.0],
-                                                          [0.0,1.0]]),
-                                                     [2,2])
+        points = []
 
-    n = coeff.PiecewiseConstantCoeffGenerator(mesh,num_pieces,
-                                              noise_level_system_n,1.0,[1])
+        # The following range will have M as its last term
+        for m in range((M+1)):
+            points.append(qmc_generator.calc_block(m))
 
+        qmc_points = points[0]
+
+        for ii in range(1,len(points)):
+            qmc_points = np.vstack((qmc_points,points[ii]))
+
+        qmc_points -= 0.5
+
+    elif points_generation_method is 'mc':
+        qmc_points = np.random.rand(2**M,J)
+    
+    # Create the coefficient
+    if mean_type is 'constant':
+        n_0 = 1.0
+
+    mesh_points = hh_utils.h_to_num_cells(h_spec[0]*k**h_spec[1],dim)
+    mesh = fd.UnitSquareMesh(mesh_points,mesh_points)
+    
+    kl_like = coeff.UniformKLLikeCoeff(mesh,J,delta,lambda_mult,n_0,qmc_points)
+    
+    # Create the problem
     V = fd.FunctionSpace(mesh,"CG",1)
+    # The Following lines are a hack because deepcopy isn't implemented
+    # for ufl expressions (in general at least), and creating an
+    # instance of the coefficient with particular 'stochastic
+    # coordinates' is the easiest way to get the preconditioning
+    # coefficient.
+
+    prob = hh.StochasticHelmholtzProblem(k,V,None,kl_like,
+                                         **{'A_pre' :
+                                            fd.as_matrix([[1.0,0.0],[0.0,1.0]])
+                                         })
+
+    points_info_columns = ['sto_loc','LU','GMRES']
+    points_info = pd.DataFrame(None,columns=points_info_columns)
+    
+    centre = np.zeros((1,J))
+
+    # Order points relative to the origin
+    order_points(prob.n_stoch.stochastic_points,centre,scaling)
+    LU = np.nan
+    prob.n_stoch.first_row_assign()
+
+    update_pc(prob,mesh,J,delta,lambda_mult,n_0)
+    
+    num_solves = 0
+    
+    # The total number of points we have 'left' is
+    # prob.n_stoch.stochastic_points.shape[0]
+    while prob.n_stoch.stochastic_points.shape[0] > 0:
+
+        prob.solve()
+        num_solves += 1
+
+        if use_nbpc is True:
+            # If GMRES iterations were too big, or we're not using nbpc,
+            # recalculate preconditioner.
+            if (prob.GMRES_its > GMRES_threshold):
+                
+                new_centre(prob,mesh,J,delta,lambda_mult,n_0,scaling)
+               
+
+            else:               
+                # Copy details of last solve into output dataframe
+                temp_df = pd.DataFrame(
+                    [[prob.n_stoch.current_point(),LU,prob.GMRES_its]],columns=points_info_columns)
+                points_info = points_info.append(temp_df,ignore_index=True)
+
+                try:
+                    prob.sample()
+                except coeff.SamplingError:
+                    pass
+
+        else: # Not using NBPC
+            temp_df = pd.DataFrame(
+                [[prob.n_stoch.current_point(),LU,prob.GMRES_its]],columns=points_info_columns)
+            points_info = points_info.append(temp_df,ignore_index=True)
+
+            try:
+                prob.sample()
+                new_centre(prob,mesh,J,delta,lambda_mult,n_0,scaling)
+            except coeff.SamplingError:
+                pass
             
-    prob = hh.StochasticHelmholtzProblem(k,V,A_stoch=A,n_stoch=n)
 
-    A_rhs = coeff.PiecewiseConstantCoeffGenerator(mesh,num_pieces,
-                                                  noise_level_rhs_A,
-                                                  as_matrix([[1.0,0.0],
-                                                             [0.0,1.0]]),
-                                                  [2,2])
 
-    f_rhs = fd.Function(mesh)
+        
+    # Now trying to see if I can do stuff with timings
+    # Try uing the re regular expression package
+    
+    
+    try:
+        open('tmp.txt','r')
+        print('SUCCESS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        print(num_solves)
+    except:
+        pass
+    
+    return points_info
 
-    prob.set_rhs_nbpc_paper(A_rhs.coeff,f_rhs)
+def update_pc(prob,mesh,J,delta,lambda_mult,n_0):
+    # Update the preconditioner
+    n_pre_instance = coeff.UniformKLLikeCoeff(mesh,J,delta,lambda_mult,
+                                              n_0,
+                                              np.array(
+                                                  deepcopy(prob.n_stoch.current_point()),
+                                                  ndmin=2))
+    
+    prob.set_n_pre(n_pre_instance.coeff)
 
-    prob.force_lu()
+def new_centre(prob,mesh,J,delta,lambda_mult,n_0,scaling):
+    centre = prob.n_stoch.current_point()
+    order_points(prob.n_stoch.stochastic_points,centre,scaling)
+    
+    update_pc(prob,mesh,J,delta,lambda_mult,n_0)
+    
 
-    return (prob,A_rhs,f_rhs)
+def order_points(points,centre,scaling):
+    """Orders the points in their distance to centre.
+
+    Ordering is done with the dimensions scaled by the elements of
+    scaling.
+
+    Parameters:
+
+    points - Numpy array with J columns, each row giving the location of
+    a QMC point.
+
+    centre - vector in $\mathbb{R}^J$
+
+    scaling - numpy array of length J, giving the scaling in each
+    dimension. Each element should be a positive float.
+
+    Output
+
+    Rearranges points IN PLACE to reflect the ordering.
+    """
+    
+    distances = np.abs(points-centre) @ scaling
+
+    # Sort the distances and extract the ordering
+
+    ordering = np.argsort(distances)
+    
+    points_copy = deepcopy(points)
+
+    for ii in range(points_copy.shape[0]):
+        points[ii,:] = points_copy[ordering[ii],:]

@@ -38,8 +38,8 @@ all_csvs_df = utils.csv_list_to_dataframe(csv_list,names_list)
 
 
 
-def plt_gmres(n_pre_type,noise_master,ks,modifiers):
-    cols = ['k','r','b','g']
+def plt_gmres(n_pre_type,noise_master,ks,modifiers,plot_num):
+    cols = ['b','k','r','b','g']
     markers = ['o','v','^']
     handles = []
     for ii in range(len(modifiers)):
@@ -53,16 +53,16 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers):
                     plt.scatter(x=data.reset_index().loc[0,'k'],y=data.iloc[0,jj],c=cols[ii],marker=markers[ii],label='Modifier = '+modifier)
     labels = [r'$\mathrm{noise\,\,level}= 0.1/k$',r'$\mathrm{noise\,\,level} = 0.1/(k^{0.5})$',r'$\mathrm{noise\,\,level} = 0.1$']# noise = noise_master non-zero $k^whatever$ # for now I'll just do the labels by hand.
     labels = labels[:(len(modifiers)+1)]
-    plt.legend(handles,labels,loc=2)
+    #plt.legend(handles,labels,loc=2)
     #title_string = r'$n^{(1)} = $' + n_pre_type# + ' and noise_master = ' + noise_master
     # Do title by hand
     #title_string = ''
     #plt.title(title_string)
     plt.xlabel(r'$k$')
     plt.ylabel('# GMRES Iterations')
-    plt.xticks([10,20,30,40]) # told by http://stackoverflow.com/questions/12608788/ddg#12608937
+    plt.xticks([20,40,60,80]) # told by http://stackoverflow.com/questions/12608788/ddg#12608937
     # Yes, this is a hack. No, I don't care.
-    plot_num = len(modifiers)
+    #plot_num = len(modifiers)
     if noise_master == '(0.1, 0.0)':
         if plot_num == 1:
             plt.yticks([7,8,9])
@@ -74,9 +74,9 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers):
         if plot_num == 1:
             plt.yticks([4,5,6])
         elif plot_num == 2:
-            plt.yticks([5,10])
+            plt.yticks([5,10,15])
         elif plot_num == 3:
-            plt.yticks([50,100,150,200,250])
+            plt.yticks([200,400,600,800,1000])
     plt.show()
 
 #----- Should only need to edit below here ------
@@ -87,7 +87,7 @@ n_pre_type = 'constant'
 #noise_master = '(0.1, 0.0)' # To use with A
 noise_master = '(0.0, 0.1)' # To use with n
 
-ks = [10.0,20.0,30.0,40.0]
+ks = [20.0,40.0,60.0,80.0]
 
 #modifiers = ['(0.0, -1.0, 0.0, 0.0)','(0.0, -0.5, 0.0, 0.0)','(0.0, 0.0, 0.0, 0.0)'] # to use with A
 modifiers = ['(0.0, 0.0, 0.0, -1.0)','(0.0, 0.0, 0.0, -0.5)','(0.0, 0.0, 0.0, 0.0)'] # to use with n
@@ -95,7 +95,8 @@ modifiers = ['(0.0, 0.0, 0.0, -1.0)','(0.0, 0.0, 0.0, -0.5)','(0.0, 0.0, 0.0, 0.
 # ------ An example -------
 
 for ii in range(len(modifiers)):
-    plt_gmres(n_pre_type,noise_master,ks,modifiers[:(ii+1)])
+    print(modifiers[ii])
+    plt_gmres(n_pre_type,noise_master,ks,modifiers[ii:(ii+1)],ii+1)
 
                               
 
