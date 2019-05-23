@@ -9,7 +9,7 @@ import datetime
 
 # NOTE, the values in here are based on one particular set of analyses for how QMC behaves. IF you want to run for a different set of analyses, you (currently) must change things manually!
 
-k_list = [10.0,20.0,30.0,40.0,50.0,60.0] # What about parallel solves?
+k_list = [10.0,20.0,30.0,40.0]#,50.0,60.0] # What about parallel solves?
 
 h_spec = (1.0,-1.5)
 
