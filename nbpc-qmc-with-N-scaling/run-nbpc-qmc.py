@@ -3,6 +3,7 @@ import numpy as np
 import pandas
 import subprocess
 import datetime
+import firedrake as fd
 
 # This script runs Quasi-Monte-Carlo for the Helmholtz IIP, with nearby preconditioning used to speed up the solves.
 # It also scales the number of QMC points with k, so (we hope) the QMC error is bounded as k increases.
@@ -46,18 +47,18 @@ for k in k_list:
     points_info = qmc_nbpc_experiment(h_spec,dim,J,M,k,delta,lambda_mult,j_scaling,mean_type,
                         use_nbpc,points_generation_method,seed,GMRES_threshold)
 
+    if fd.COMM_WORLD.rank ==0:
+        # Get current date and time
+        # This initialises the object. I don't understand why this is
+        # necessary.
+        date_time = datetime.datetime(1,1,1)
 
-    # Get current date and time
-    # This initialises the object. I don't understand why this is
-    # necessary.
-    date_time = datetime.datetime(1,1,1)
-
-    # Get git hash
-    git_hash = subprocess.run("git rev-parse HEAD", shell=True,
+        # Get git hash
+        git_hash = subprocess.run("git rev-parse HEAD", shell=True,
                                   stdout=subprocess.PIPE)
+        
+        # help from https://stackoverflow.com/a/6273618
+        file_name = 'k-'+str(k)+'-git-hash-' + git_hash.stdout.decode('UTF-8')[:-1][:6]+date_time.utcnow().isoformat()+'.csv'
 
-    # help from https://stackoverflow.com/a/6273618
-    file_name = 'k-'+str(k)+'-git-hash-' + git_hash.stdout.decode('UTF-8')[:-1][:6]+date_time.utcnow().isoformat()+'.csv'
-
-    points_info.to_csv(file_name)
+        points_info.to_csv(file_name)
         
