@@ -1,0 +1,31 @@
+"Git hash","1fdde13fdcf9c7f9cc03adb660a77d0d875aae94"
+"Date/Time","2019-01-08T07:41:46.769916"
+"modifier","(0.0, 0.0, 0.0, 0.0)"
+"num_repeats",20
+"A_pre_type","constant"
+"p",1
+"noise_master","(0.0, 0.01)"
+"n_pre_type","constant"
+"num_pieces",10
+"k",50.0
+"h_tuple","(1.0, -1.5)"
+0,7
+1,8
+2,9
+3,8
+4,8
+5,7
+6,7
+7,7
+8,8
+9,7
+10,8
+11,7
+12,10
+13,10
+14,9
+15,9
+16,7
+17,7
+18,10
+19,10

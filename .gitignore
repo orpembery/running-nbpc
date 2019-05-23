@@ -1,7 +1,9 @@
 *.err
 *.out
 *.slurm
-*.csv
 *~
 *__/
+*pyc
+running-scripts/*/
+dev/
 latticeseq_b2.py
