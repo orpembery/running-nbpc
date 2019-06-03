@@ -4,13 +4,16 @@ import pandas
 import subprocess
 import datetime
 import firedrake as fd
-
+import sys
 # This script runs Quasi-Monte-Carlo for the Helmholtz IIP, with nearby preconditioning used to speed up the solves.
 # It also scales the number of QMC points with k, so (we hope) the QMC error is bounded as k increases.
 
 # NOTE, the values in here are based on one particular set of analyses for how QMC behaves. IF you want to run for a different set of analyses, you (currently) must change things manually!
 
-k_list = [10.0,20.0,30.0,40.0,50.0,60.0]
+k_list = [float(sys.argv[1])]#[10.0,20.0,30.0,40.0,50.0,60.0]
+
+from firedrake_complex_hacks import balena_hacks
+balena_hacks.fix_mesh_generation_time()
 
 h_spec = (1.0,-1.5)
 
@@ -37,8 +40,10 @@ GMRES_threshold = 10
 
 for k in k_list:
 
-    # Based on experimental data, want N to scale like k^{3.5}
-    # So N = D * k**3.5, and we'll do things so that for k=10.0, we have 2048 points.
+    # Based on experimental data, want N to scale like
+    # k^{3.5}. Experimental data was gained for 2048 points, but that
+    # takes a long time So N = D * k**3.5, and we'll do things so that
+    # for k=10.0, we have 128 points.
     D = 2048/(10**3.5)
     # So M = log2(D * k^{3.5})
 
