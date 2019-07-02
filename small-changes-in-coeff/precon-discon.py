@@ -3,7 +3,7 @@ import firedrake as fd
 from helmholtz_firedrake.utils import h_to_num_cells, nd_indicator
 import numpy as np
 
-k_list = [10.0,20.0,30.0,40.0,50.0,60.0]
+k_list = [10.0,20.0,30.0,40.0,50.0,60.0,70.0,80.0,90.0,100.0]#[10.0,20.0,30.0,40.0,50.0,60.0]
 
 #eps_list = [0.1,0.01,0.001]
 
@@ -13,16 +13,13 @@ discon = np.array([[0.5,1.0],[0.0,1.0]])
 
 angle = 2.0*np.pi/3.0
 
-#for eps in eps_list:
-
-eps_const = 0.1 # Looks like it gives you k-independent, at least up to k=40
-#eps_const = 1.0 # Nearly k-independent
+eps_const = 0.2
 
 for k in k_list:
 
-    for eps in [eps_const/k,eps_const]:
-    
-        #    eps = eps_const/k
+    for eps_power in [0.9,0.8,0.7,0.6]:
+
+        eps = eps_const/k**eps_power
 
         shift = np.array([[eps,0.0],[0.0,0.0]])
 
@@ -42,14 +39,13 @@ for k in k_list:
 
         prob = HelmholtzProblem(k,V,A=A,n=n,A_pre=A,n_pre=n_pre)
 
-
         prob.f_g_plane_wave([np.cos(angle),np.sin(angle)])
 
         prob.solve()
 
         if fd.COMM_WORLD.rank == 0:
-        
-            print('k',k,'eps',eps,'GMRES iterations',prob.GMRES_its,flush=True)
+
+            print('k',k,'eps_const',eps_const,'eps_power',eps_power,'eps',eps,'GMRES iterations',prob.GMRES_its,flush=True)
 
 
 
