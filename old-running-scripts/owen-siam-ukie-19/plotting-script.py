@@ -3,6 +3,8 @@ from os import listdir
 from fnmatch import fnmatch
 import numpy as np
 from matplotlib import pyplot as plt
+import tikzplotlib
+
 this_directory = './'
 
 csv_list = []
@@ -66,12 +68,12 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers):
               r'$\mathrm{noise\,\,level} = 0.1/(k^{0.5})$',
               r'$\mathrm{noise\,\,level} = 0.1$']
     labels = labels[:(len(modifiers)+1)]
-    plt.legend(handles,labels,loc=2)
+    #plt.legend(handles,labels,loc=2)
     
     plt.xlabel(r'$k$')
-    plt.ylabel('# GMRES Iterations')
+    plt.ylabel('\# GMRES Iterations')
 
-    plt.xticks([20,40,60,80,100]) # told by http://stackoverflow.com/questions/12608788/ddg#12608937
+    plt.xticks([20,40,60,80]) # told by http://stackoverflow.com/questions/12608788/ddg#12608937
 
     # Yes, this is a hack. No, I don't care.
     plot_num = len(modifiers)
@@ -83,14 +85,34 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers):
         elif plot_num == 3:
             plt.yticks([40,80,120,160])
     elif noise_master == '(0.0, 0.1)':
-        if plot_num == 1:
-            plt.yticks([4,5,6])
-        elif plot_num == 2:
-            plt.yticks([5,10,15])
-        elif plot_num == 3:
-            plt.yticks([500,1000,1500,2000])
-    plt.show()
+        # if plot_num == :
+        #     plt.yticks([4,5,6])
+        # elif plot_num == 2:
+        #     plt.yticks([5,10,15])
+        # elif plot_num == 3:
+        plt.yticks(#[25,50])
+            #[100,200])
+            #[250,500])
+            #[500,1000])
+            [4,5,6])
+    #plt.show()
 
+    plt.xlim([10,90])
+
+    #plt.figure(num=1,figsize=(1,1))
+
+    #https://stackoverflow.com/a/4306340
+    
+    fig = plt.gcf()
+    
+    fig.set_size_inches(3.5,3.5)
+    
+    plt.savefig('n-const-1.pgf')
+
+    #tikzplotlib.save("n-const-1.tex")
+    
+    plt.show()
+    
 #----- Should only need to edit below here ------
 
 
@@ -101,15 +123,16 @@ noise_master = '(0.0, 0.1)' # To use with n
 
 #ks = [10.0,20.0,30.0,50.0,60.0,70.0,80.0,90.0,100.0]
 
-ks = [10.0,20.0,30.0,40.0,50.0,60.0,70.0,80.0,90.0,100.0]
+ks = [20.0]#,40.0]#,60.0]#,80.0]
+
+#ks = [10.0,20.0,30.0,40.0,50.0,60.0,70.0,80.0,90.0,100.0]
 
 #modifiers = ['(0.0, -1.0, 0.0, 0.0)','(0.0, -0.5, 0.0, 0.0)','(0.0, 0.0, 0.0, 0.0)'] # to use with A
 modifiers = ['(0.0, 0.0, 0.0, -1.0)','(0.0, 0.0, 0.0, -0.5)','(0.0, 0.0, 0.0, 0.0)'] # to use with n
 
 # ------ An example -------
 
-for ii in range(len(modifiers)):
-    plt_gmres(n_pre_type,noise_master,ks,modifiers[:(ii+1)])
+plt_gmres(n_pre_type,noise_master,ks,[modifiers[0]])
 
                               
 
