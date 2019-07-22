@@ -16,7 +16,7 @@ h_list = [(1.0,-1.5)]
 
 p_list = [1]
 
-num_repeats = 20
+num_repeats = 100
 
 num_pieces = 10
 

@@ -6,7 +6,7 @@
 #SBATCH --error=%j.err
 #SBATCH --output=%j.out
 #SBATCH --partition=batch
-#SBATCH --time=06:00:00
+#SBATCH --time=12:00:00
 
 source /beegfs/scratch/user/s/orp20/own-utilities/helmholtz_firedrake_venv.sh
 
