@@ -1,4 +1,0 @@
-k 70.0 eps 0.011952286093343936 GMRES iterations 15
-k 80.0 eps 0.011180339887498949 GMRES iterations 16
-k 90.0 eps 0.010540925533894598 GMRES iterations 17
-k 100.0 eps 0.01 GMRES iterations 17
