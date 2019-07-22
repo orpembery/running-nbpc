@@ -1,13 +1,19 @@
 from helmholtz_firedrake.problems import HelmholtzProblem
 import firedrake as fd
-from helmholtz_firedrake.utils import h_to_num_cells, nd_indicator
+from helmholtz_firedrake.utils import h_to_num_cells, nd_indicator, write_repeats_to_csv
 import numpy as np
+import sys
+import pandas as pd
 
-k_list = [10.0,20.0,30.0,40.0,50.0,60.0,70.0,80.0,90.0,100.0]#[10.0,20.0,30.0,40.0,50.0,60.0]
+# Command line argument should be 1 if on Balena, 0 otherwise
 
-#eps_list = [0.1,0.01,0.001]
+on_balena = bool(int(sys.argv[1]))
 
-# What if you took eps = 1/k
+if on_balena:
+    from firedrake_complex_hacks import balena_hacks
+    balena_hacks.fix_mesh_generation_time()
+
+k_list = np.linspace(10.0,100.0,num=10)
 
 discon = np.array([[0.5,1.0],[0.0,1.0]])
 
@@ -15,9 +21,11 @@ angle = 2.0*np.pi/3.0
 
 eps_const = 0.2
 
-for k in k_list:
+for eps_power in np.linspace(0.0,1.0,num=11):
 
-    for eps_power in [0.9,0.8,0.7,0.6]:
+    storage = np.ones((1,2))
+    
+    for k in k_list:
 
         eps = eps_const/k**eps_power
 
@@ -42,10 +50,14 @@ for k in k_list:
         prob.f_g_plane_wave([np.cos(angle),np.sin(angle)])
 
         prob.solve()
+        
+        storage=np.append(storage,np.array((k,prob.GMRES_its),ndmin=2),axis=0)
 
-        if fd.COMM_WORLD.rank == 0:
+    storage = storage[1:,:]
 
-            print('k',k,'eps_const',eps_const,'eps_power',eps_power,'eps',eps,'GMRES iterations',prob.GMRES_its,flush=True)
+    if fd.COMM_WORLD.rank == 0:
+        
+        write_repeats_to_csv(storage,'./output/','l1-scaling-power-'+str(eps_power),{})
 
 
 
