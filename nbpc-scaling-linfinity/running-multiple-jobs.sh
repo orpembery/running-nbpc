@@ -1,6 +1,10 @@
 #!/bin/bash
 
-for k in 20.0 30.0 40.0 50.0 60.0 70.0 80.0 90.0 100.0
+source /beegfs/scratch/user/s/orp20/own-utilities/helmholtz_firedrake_venv.sh
+
+for k in 20.0 40.0 60.0 80.0 100.0
 do
-    sbatch --job-name="$k" --err="$k" --output="$k" ./jobscript.slurm $ki 
+    num_procs=$(python calc_procs.py $k)
+    
+    sbatch --job-name="$k" --err="$k" --output="$k" ./jobscript-nbpc.slurm $num_procs $k 1
 done
