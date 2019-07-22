@@ -2,8 +2,20 @@ from helmholtz_firedrake.problems import HelmholtzProblem
 import firedrake as fd
 from helmholtz_firedrake.utils import h_to_num_cells, nd_indicator
 import numpy as np
+import sys
 
-k_list = [10.0,20.0,30.0,40.0,50.0,60.0,70.0,80.0,90.0,100.0]#[10.0,20.0,30.0,40.0,50.0,60.0]
+on_balena = bool(int(sys.argv[1]))
+
+print(on_balena,flush=True)
+
+if on_balena:
+
+    from firedrake_complex_hacks import balena_hacks
+    balena_hacks.fix_mesh_generation_time()
+    print('imported',flush=True)
+
+
+k_list = [200.0]#[10.0,20.0,30.0,40.0,50.0,60.0,70.0,80.0,90.0,100.0]#[10.0,20.0,30.0,40.0,50.0,60.0]
 
 #eps_list = [0.1,0.01,0.001]
 
@@ -17,7 +29,7 @@ eps_const = 0.2
 
 for k in k_list:
 
-    for eps_power in [0.9,0.8,0.7,0.6]:
+    for eps_power in [0.9]:#,0.8,0.7,0.6]:
 
         eps = eps_const/k**eps_power
 
