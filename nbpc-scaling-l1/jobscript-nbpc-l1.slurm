@@ -12,4 +12,4 @@ source /beegfs/scratch/user/s/orp20/own-utilities/helmholtz_firedrake_venv.sh
 
 cd /home/s/orp20/scratch/running-nbpc/nbpc-scaling-l1
 
-mpirun -n 16 python running-nbpc-scaling-l1.py 
+mpirun -n 16 python running-nbpc-scaling-l1.py 1
