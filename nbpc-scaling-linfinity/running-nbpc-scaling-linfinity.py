@@ -30,10 +30,12 @@ dim = 2
 
 save_location = './output/'
 
+noise_master_level = 0.2
+
 # For A changing
-experiments.nearby_preconditioning_piecewise_experiment_set(A_pre_type=A_pre_type,n_pre_type=n_pre_type,dim=dim,num_pieces=num_pieces,seed=seed,num_repeats=num_repeats,k_list=k_list,h_list=h_list,p_list=p_list,noise_master_level_list=[(0.1,0.0)],noise_modifier_list=[(0.0,0.0,0.0,0.0),(0.0,-0.5,0.0,0.0),(0.0,-1.0,0.0,0.0)],save_location=save_location)
+experiments.nearby_preconditioning_piecewise_experiment_set(A_pre_type=A_pre_type,n_pre_type=n_pre_type,dim=dim,num_pieces=num_pieces,seed=seed,num_repeats=num_repeats,k_list=k_list,h_list=h_list,p_list=p_list,noise_master_level_list=[(noise_master_level,0.0)],noise_modifier_list=[(0.0,0.0,0.0,0.0),(0.0,-0.5,0.0,0.0),(0.0,-1.0,0.0,0.0)],save_location=save_location)
 
 # For n changing
-experiments.nearby_preconditioning_piecewise_experiment_set(A_pre_type=A_pre_type,n_pre_type=n_pre_type,dim=dim,num_pieces=num_pieces,seed=seed,num_repeats=num_repeats,k_list=k_list,h_list=h_list,p_list=p_list,noise_master_level_list=[(0.0,0.1)],noise_modifier_list=[(0.0,0.0,0.0,0.0),(0.0,0.0,0.0,-0.5),(0.0,0.0,0.0,-1.0)],save_location=save_location)
+experiments.nearby_preconditioning_piecewise_experiment_set(A_pre_type=A_pre_type,n_pre_type=n_pre_type,dim=dim,num_pieces=num_pieces,seed=seed,num_repeats=num_repeats,k_list=k_list,h_list=h_list,p_list=p_list,noise_master_level_list=[(0.0,noise_master_level)],noise_modifier_list=[(0.0,0.0,0.0,0.0),(0.0,0.0,0.0,-0.5),(0.0,0.0,0.0,-1.0)],save_location=save_location)
 
 
