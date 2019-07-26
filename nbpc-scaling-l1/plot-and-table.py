@@ -2,6 +2,7 @@ import pandas as pd
 import helmholtz_firedrake.utils as utils
 from os import listdir
 from fnmatch import fnmatch
+from matplotlib import pyplot as plt
 
 this_directory = './'
 
@@ -41,4 +42,28 @@ df = pd.DataFrame(data,columns=k_list,index=eps_list)
 
 df = df.sort_index()
 
-print(df)
+# Put dataframe in a table
+
+# Plot results for 0.0 to 0.3 on one axis 0.4-0.7 on another and 0.8-1.0 on another
+
+def make_plot():
+
+
+    
+    plt.show()
+
+# Need to do a bit of work on style.
+    
+df.loc[0.0:0.3,:].T.plot(style='.')
+
+make_plot()
+
+df.loc[0.4:0.7,:].T.plot()
+
+make_plot()
+
+df.loc[0.8:,:].T.plot()
+
+make_plot()
+
+
