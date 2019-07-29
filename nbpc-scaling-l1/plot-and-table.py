@@ -3,6 +3,8 @@ import helmholtz_firedrake.utils as utils
 from os import listdir
 from fnmatch import fnmatch
 from matplotlib import pyplot as plt
+from matplotlib.ticker import MaxNLocator
+import numpy as np
 
 this_directory = './'
 
@@ -46,24 +48,58 @@ df = df.sort_index()
 
 # Plot results for 0.0 to 0.3 on one axis 0.4-0.7 on another and 0.8-1.0 on another
 
-def make_plot():
+def make_plot(locs):
+
+    fig = plt.figure()
+
+    styles = 'ovsd'
+
+    for ii_loc in range(len(locs)):
+
+        loc = locs[ii_loc]
+
+        # special for 0.0 and 1.0
 
 
+        if loc == 1.0:
+            str_loc = ''
+        else:
+            str_loc = str(loc)
+
+
+        if loc == 0.0:
+            label = r'$\alpha = 0.2}$'
+        else:
+            label = r'$\alpha = 0.2/k^{'+str_loc+'}$'
+
+        
+        
+        df.loc[loc,:].T.plot(style='k'+styles[ii_loc]+'--',label=label)
+
+    plt.xlabel('$k$')
+
+    plt.ylabel('Number of GMRES iterations')
+
+    plt.xlim([0,110])
+
+    plt.xticks([10,20,30,40,50,60,70,80,90,100])
+
+    # Found out about this from https://www.scivision.dev/matplotlib-force-integer-labeling-of-axis/
+    ax = fig.gca()
+    
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+        
+    plt.legend(loc='upper left')
     
     plt.show()
 
-# Need to do a bit of work on style.
+
+# Make the plots
     
-df.loc[0.0:0.3,:].T.plot(style='.')
+make_plot([0.0,0.1,0.2,0.3])
 
-make_plot()
+make_plot([0.4,0.5,0.6,0.7])
 
-df.loc[0.4:0.7,:].T.plot()
-
-make_plot()
-
-df.loc[0.8:,:].T.plot()
-
-make_plot()
+make_plot([0.8,0.9,1.0])
 
 
