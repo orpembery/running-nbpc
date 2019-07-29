@@ -13,7 +13,7 @@ if on_balena:
     from firedrake_complex_hacks import balena_hacks
     balena_hacks.fix_mesh_generation_time()
 
-k_list = np.linspace(10.0,100.0,num=10)
+k_list = np.linspace(10.0,150.0,num=10)
 
 discon = np.array([[0.5,1.0],[0.0,1.0]])
 
