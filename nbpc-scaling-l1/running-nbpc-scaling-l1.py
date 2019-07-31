@@ -24,8 +24,12 @@ eps_const = 0.2
 for eps_power in np.linspace(0.0,1.0,num=11):
 
     storage = np.ones((1,2))
+
+    print(eps_power,flush=True)
     
     for k in k_list:
+
+        print(k,flush=True)
 
         eps = eps_const/k**eps_power
 
