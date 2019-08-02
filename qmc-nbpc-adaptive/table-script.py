@@ -2,6 +2,7 @@ import csv
 import pandas as pd
 from os import listdir
 from fnmatch import fnmatch
+import fileinput
 
 k_list = [10.0,20.0,30.0]
 
@@ -37,9 +38,21 @@ float_format = '{:.2f}'.format # Based on formatting described at https://pyform
 
 column_format = 'Sc Sc Sc Sc Sc'
 
-with open('table.tex',mode='w') as table:
-    df_master.to_latex(table,header=column_names,float_format=float_format)
+table_name = 'sequential-nbpc-qmc-table.tex'
 
-            
+with open(table_name,mode='w') as table:
+    df_master.to_latex(table,header=column_names,float_format=float_format,column_format=column_format)
+
+# This is a hack to get the table to print like I want
+
+with fileinput.input(files=(table_name),inplace=True) as table:
+    for line in table:
+        if line.endswith('Sc}\n'):
+            print(line[:-2]+' Sc}')        
+        elif line.startswith('{}'):
+            print(r'$k$'+line[2:])
+        else:
+            print(line)
+
             
 
