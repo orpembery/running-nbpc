@@ -38,12 +38,12 @@ GMRES_threshold = 10
 for k in k_list:
 
     # Based on experimental data, want N to scale like
-    # k^{3.5}. Experimental data was gained for 2048 points, but that
-    # takes a long time So N = D * k**3.5, and we'll do things so that
+    # k^{0.28}. Experimental data was gained for 2048 points, but that
+    # takes a long time So N = D * k**0.28, and we'll do things so that
     # for k=10.0, we have 2048 points.
-    k_power = 3.5
+    k_power = 0.28
     D = 2048/(10**k_power)
-    # So M = log2(D * k^{3.5})
+    # So M = log2(D * k^{0.28})
 
     M = int(np.round(np.log2(D*k**k_power)))
 
