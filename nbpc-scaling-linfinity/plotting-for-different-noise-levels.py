@@ -3,6 +3,8 @@ from os import listdir
 from fnmatch import fnmatch
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.ticker import MaxNLocator
+
 this_directory = './'
 
 csv_list = []
@@ -23,26 +25,17 @@ names_list.remove('num_repeats')
         
 all_csvs_df = utils.csv_list_to_dataframe(csv_list,names_list)
 
-print(all_csvs_df)
-
-# This only comes into play when doing a lot of runs
-#max_len = 0
-#for ii in all_csvs_df.index:
-#    this_output = np.unique(all_csvs_df.loc[ii,:].values)
-#    max_len = max(max_len,len(this_output))
-#    all_csvs_df.loc[ii,:(len(this_output)-1)] = this_output
-#    all_csvs_df.loc[ii,len(this_output):] = np.nan
-
 def plt_gmres2(n_pre_type,noise_masters,ks,modifier):
     # Idea for old plotting script - loop over modifiers, loop over k, for each one, plot it
     # Idea for new script, loop over noise_masters, loop over k, for each one, plot it
     """Modifier must be a string (and noise_master)"""
-    cols = ['k','r','b','g','k','r','b','g','k','r','b','g','k','r','b','g']
-    markers = ['o','v','^']
+
+    fig = plt.figure()
+    
     handles = []
     for ii in range(len(noise_masters)):
         noise_master = noise_masters[ii]
-        print(noise_master)
+
         for k in ks:
             
             data = all_csvs_df.xs(
@@ -56,46 +49,49 @@ def plt_gmres2(n_pre_type,noise_masters,ks,modifier):
                         plt.scatter(
                             x=data.reset_index().loc[0,'k'],
                             y=data.iloc[0,jj],
-                            c=cols[ii]))
+                            c='k'))
                 else:
                     plt.scatter(
                         x=data.reset_index().loc[0,'k'],
                         y=data.iloc[0,jj],
-                        c=cols[ii])
-                    
-    #labels = [r'$\mathrm{noise\,\,level}= 0.1/k$',
-    #          r'$\mathrm{noise\,\,level} = 0.1/(k^{0.5})$',
-    #          r'$\mathrm{noise\,\,level} = 0.1$']
-    #labels = labels[:(len(modifiers)+1)]
-    #plt.legend(handles,labels,loc=2)
+                        c='k')
     
     plt.xlabel(r'$k$')
     plt.ylabel('# GMRES Iterations')
 
-    plt.xticks([20,40,60,80,100]) # told by http://stackoverflow.com/questions/12608788/ddg#12608937
+    plt.xticks([20,40,60,80]) # told by http://stackoverflow.com/questions/12608788/ddg#12608937
+
+    # Found out about this from https://www.scivision.dev/matplotlib-force-integer-labeling-of-axis/
+    ax = fig.gca()
+        
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
     plt.show()
+
+    plt.close(fig)
 
 #----- Should only need to edit below here ------
 
 
 n_pre_type = 'constant'
 
-#noise_master = '(0.1, 0.0)' # To use with A
-noise_masters = ['(0.0, 0.0001)','(0.0, 0.001)','(0.0, 0.002)','(0.0, 0.004)','(0.0, 0.006)','(0.0, 0.008)','(0.0, 0.01)','(0.0, 0.1)'] # To use with n
+noise_master_A = '(0.5, 0.0)'
 
-#ks = [10.0,20.0,30.0,50.0,60.0,70.0,80.0,90.0,100.0]
-
-#ks = [10.0,20.0,30.0,60.0,70.0,80.0,90.0,100.0]
+noise_master_n = '(0.0, 0.5)'
 
 ks = [20.0,40.0,60.0,80.0]
 
-modifier = '(0.0, 0.0, 0.0, 0.0)' # to use with n
+A_modifiers = ['(0.0, 0.0, 0.0, 0.0)','(0.0, -0.5, 0.0, 0.0)','(0.0, -1.0, 0.0, 0.0)']
+
+n_modifiers = ['(0.0, 0.0, 0.0, 0.0)','(0.0, 0.0, 0.0, -0.5)','(0.0, 0.0, 0.0, -1.0)']
 
 # ------ An example -------
-for ii in range(len(noise_masters)):
-    plt_gmres2(n_pre_type,noise_masters[:(ii+1)],ks,modifier)
+for modifier in A_modifiers:
+    plt_gmres2(n_pre_type,[noise_master_A],ks,modifier)
 
+for modifier in n_modifiers:
+    plt_gmres2(n_pre_type,[noise_master_n],ks,modifier)
+    
                               
 
 
