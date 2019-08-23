@@ -1,13 +1,13 @@
-"Git hash","ca3c40d50800ca1c9148a13f107c05a344b1f063"
-"Date/Time","2019-07-29T09:18:03.615534"
-"k",80.0
+"Git hash","20838bc91c279225891507cd3b165e233b03d424"
+"Date/Time","2019-08-05T12:52:59.548777"
+"k",20.0
 "h_tuple","(1.0, -1.5)"
 "p",1
 "num_pieces",10
 "A_pre_type","constant"
 "n_pre_type","constant"
-"noise_master","(0.5, 0.0)"
-"modifier","(0.0, -1.0, 0.0, 0.0)"
+"noise_master","(0.0, 0.5)"
+"modifier","(0.0, 0.0, 0.0, -1.0)"
 "num_repeats",100
 0,5
 1,5
