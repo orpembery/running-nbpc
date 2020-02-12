@@ -1,9 +1,5 @@
-# running-nbpc #
+# Summary #
+This code is used in the PhD thesis 'The Helmholtz Equation in Heterogeneous and Random Media: Analysis and Numerics'; see [this repository](https://github.com/orpembery/thesis) for more information.
 
-Contains the scripts to run the experiments for the nearby preconditioning paper. (Note - not the back-end code that actually runs the experiments - this was forked(ish) from that repository.) Development ongoing.
-
-## Requirements ##
-
-1) Pandas
-2) Helmholtz Firedrake
-2) helmholtz-nearby-preconditioning
+---
+For any queries, contact Owen Pembery on opembery 'at' gmail 'dot' com.
