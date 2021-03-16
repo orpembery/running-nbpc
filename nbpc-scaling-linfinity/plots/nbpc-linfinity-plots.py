@@ -70,7 +70,7 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
 
             y_data_tmp = np.max(np.unique(data))
 
-            print(y_data_tmp)
+            #print(y_data_tmp)
 
             if np.all(y_data == 'setup'):
                 y_data = np.array(y_data_tmp)
@@ -85,9 +85,9 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
             #print(x_data)
             #print(y_data)
 
-        print(x_data)
+        #print(x_data)
 
-        print(y_data)
+        #print(y_data)
                 
         plt.plot(x_data,y_data,styles[ii]+'--',label=label,c=colours[ii])
 
@@ -109,6 +109,7 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
     fig.set_size_inches((5.5,5.5))
     
     plt.savefig(filename+'.pgf')
+    plt.close('all')
 
 #----- Should only need to edit below here ------
 
@@ -137,6 +138,7 @@ things_for_plotting = [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
 plot_collection = [[0,4],[4,8],[8,11]]
 
 for ii_An in range(2):
+    print('start-An-'+str(ii_An))
     noise_master = noise_masters[ii_An]
     modifiers = modifierss[ii_An]
     filename = 'nbpc-linfinity-plot-'
@@ -147,8 +149,12 @@ for ii_An in range(2):
     filename += '-'
     
     for ii in range(len(plot_collection)):
+        print('start-'+str(ii))
         filename_tmp = filename + str(ii)
         plt_gmres(n_pre_type,noise_master,ks,modifiers[plot_collection[ii][0]:plot_collection[ii][1]],filename_tmp,things_for_plotting[plot_collection[ii][0]:plot_collection[ii][1]])
+        print('end-'+str(ii))
+    print('end-An-'+str(ii_An))
+print('end of file')
 
                               
 
