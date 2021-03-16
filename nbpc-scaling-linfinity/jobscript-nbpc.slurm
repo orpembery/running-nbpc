@@ -6,10 +6,10 @@
 #SBATCH --error=%j.err
 #SBATCH --output=%j.out
 #SBATCH --partition=batch
-#SBATCH --time=01:00:00
+#SBATCH --time=24:00:00
 
 source /beegfs/scratch/user/s/orp20/own-utilities/helmholtz_firedrake_venv.sh
 
 cd /home/s/orp20/scratch/running-nbpc/nbpc-scaling-linfinity
 
-mpirun -n $1 python running-nbpc-scaling-linfinity.py $2 $3
+mpirun -n $1 python running-nbpc-scaling-linfinity.py $2 $3 $4
