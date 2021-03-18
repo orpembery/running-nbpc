@@ -18,7 +18,10 @@ k = float(sys.argv[1])
 
 alpha = float(sys.argv[2])
 
-A_vs_n = bool(sys.argv[3])
+A_vs_n = bool(int(sys.argv[3]))
+
+print("A_vs_n: ",A_vs_n)
+print("on_balena: ",on_balena)
 
 dim = 2
 
@@ -42,17 +45,17 @@ else:
     varying_coeff = 0.0
 
 # This is, strictly speaking, the number of subdomains in each direction
-subdomains = 10
+num_pieces = 10
 
-for ii in range(subdomains):
-    for jj in range(subdomains):
+for ii in range(num_pieces):
+    for jj in range(num_pieces):
         if np.mod(ii+jj,2) == 1:
             value = 1 + alpha
         else:
             value = 1 - alpha
             fl_ii = float(ii)
             fl_jj = float(jj)
-        varying_coeff += hh_utils.nd_indicator(x,value * constant_to_multiply,np.array([[fl_ii,fl_ii+1.0],[fl_jj,fl_jj+1.0]])/float(subdomains))
+        varying_coeff += hh_utils.nd_indicator(x,value * constant_to_multiply,np.array([[fl_ii,fl_ii+1.0],[fl_jj,fl_jj+1.0]])/float(num_pieces))
 
 if A_vs_n:        
     A = varying_coeff
@@ -71,15 +74,35 @@ prob = hh.HelmholtzProblem(k=k, V=V, A=A, n=n, A_pre=A_pre, n_pre=n_pre)
 
 prob.solve()
 
-all_GMRES_its = []
+GMRES_its = []
 
 if fd.COMM_WORLD.rank == 0:
         
-    all_GMRES_its.append(prob.GMRES_its)
+    GMRES_its.append(prob.GMRES_its)
 
-all_GMRES_its  = np.array(all_GMRES_its)
+GMRES_its  = np.array(GMRES_its)
 
 # Write this to file
+
+save_location = './output-deterministic/'
+
+h_tuple = [1.0,-1.5]
+
+p = 1
+
+A_pre_type='constant'
+
+n_pre_type='constant'
+
+dim = 2
+if A_vs_n:
+    noise_master = (alpha,0.0)
+else:
+    noise_master = (0.0,alpha)
+
+modifier = (0.0,0.0,0.0,0.0)
+
+num_repeats = 1
 
 if fd.COMM_WORLD.rank == 0:
     hh_utils.write_GMRES_its(
