@@ -20,9 +20,6 @@ alpha = float(sys.argv[2])
 
 A_vs_n = bool(int(sys.argv[3]))
 
-print("A_vs_n: ",A_vs_n)
-print("on_balena: ",on_balena)
-
 dim = 2
 
 h = k**(-1.5)
@@ -39,10 +36,10 @@ g = 1j*k*fd.exp(1j*k*fd.dot(x,d))*(fd.dot(d,nu)-1)
 
 if A_vs_n:
     constant_to_multiply = fd.as_matrix([[1.0,0.0],[0.0,1.0]])
-    varying_coeff = fd.as_matrix([[0.0,0.0],[0.0,0.0]])
+    varying_coeff = fd.as_matrix([[1.0,0.0],[0.0,1.0]])
 else:
     constant_to_multiply = 1.0
-    varying_coeff = 0.0
+    varying_coeff = 1.0
 
 # This is, strictly speaking, the number of subdomains in each direction
 num_pieces = 10
@@ -50,11 +47,12 @@ num_pieces = 10
 for ii in range(num_pieces):
     for jj in range(num_pieces):
         if np.mod(ii+jj,2) == 1:
-            value = 1 + alpha
+            value = + alpha
         else:
-            value = 1 - alpha
-            fl_ii = float(ii)
-            fl_jj = float(jj)
+            value = - alpha
+        fl_ii = float(ii)
+        fl_jj = float(jj)
+        print(ii,jj,value)
         varying_coeff += hh_utils.nd_indicator(x,value * constant_to_multiply,np.array([[fl_ii,fl_ii+1.0],[fl_jj,fl_jj+1.0]])/float(num_pieces))
 
 if A_vs_n:        
