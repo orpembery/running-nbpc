@@ -8,8 +8,8 @@ do
     do
 	num_procs=$(python calc_procs.py $k)
 	
-	sbatch --job-name="$k" --err="$k.err" --output="$k.out" ./jobscript-nbpc.slurm $num_procs $k 1.0 $beta 1 1
+	sbatch --job-name="$k" --err="$k.err" --output="$k.out" ./jobscript-nbpc-deterministic.slurm $num_procs $k 1.0 $beta 1 1
 	
-	sbatch --job-name="$k" --err="$k.err" --output="$k.out" ./jobscript-nbpc.slurm $num_procs $k 0.5 $beta 0 1
+	sbatch --job-name="$k" --err="$k.err" --output="$k.out" ./jobscript-nbpc-deterministic.slurm $num_procs $k 0.5 $beta 0 1
     done
 done
