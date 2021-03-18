@@ -6,9 +6,9 @@ import numpy as np
 
 # This is a slightly rough-and-ready experiment to assess whether just taking the worst case on an alternating checkerboard gives substantially different numbers of GMRES iterations to those already in the paper.
 # It borrows from other code, but has had to be reworked for the deterministic scenario
-# Three input arguments: k, alpha, bool (1 if want to do A computation, 0 if n),  fourth is 1 if on balena, 0 otherwise
+# Many input arguments: k, alpha, beta, bool (1 if want to do A computation, 0 if n),  bool: 1 if on balena, 0 otherwise
 
-on_balena = bool(int(sys.argv[4]))
+on_balena = bool(int(sys.argv[5]))
 
 if on_balena:
     from firedrake_complex_hacks.balena_hacks import fix_mesh_generation_time
@@ -18,7 +18,11 @@ k = float(sys.argv[1])
 
 alpha = float(sys.argv[2])
 
-A_vs_n = bool(int(sys.argv[3]))
+beta = float(sys.argv[3])
+
+k_multipler = k**(-beta)
+
+A_vs_n = bool(int(sys.argv[4]))
 
 dim = 2
 
@@ -47,9 +51,9 @@ num_pieces = 10
 for ii in range(num_pieces):
     for jj in range(num_pieces):
         if np.mod(ii+jj,2) == 1:
-            value = + alpha
+            value = + alpha * k_multipler
         else:
-            value = - alpha
+            value = - alpha* k_multipler
         fl_ii = float(ii)
         fl_jj = float(jj)
         print(ii,jj,value)
@@ -98,7 +102,10 @@ if A_vs_n:
 else:
     noise_master = (0.0,alpha)
 
-modifier = (0.0,0.0,0.0,0.0)
+if A_vs_n:
+    modifier = (0.0,-beta,0.0,0.0)
+else:
+    modifier = (0.0,.0,--0.0,beta)
 
 num_repeats = 1
 
