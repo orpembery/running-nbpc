@@ -118,7 +118,7 @@ n_pre_type = 'constant'
 
 noise_masters = ['('+str(noise_level)+', 0.0)','(0.0, '+str(noise_level)+')']
 
-ks = [20.0,40.0,60.0,80.0,100.0]
+ks = [20.0,40.0,60.0,80.0]#,100.0]
 
 
 
