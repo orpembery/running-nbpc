@@ -86,7 +86,7 @@ GMRES_its  = np.array(GMRES_its)
 
 # Write this to file
 
-save_location = './output-deterministic/'
+save_location = './output-deterministic-10/'
 
 h_tuple = [1.0,-1.5]
 
