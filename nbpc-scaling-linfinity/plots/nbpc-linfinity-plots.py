@@ -46,8 +46,6 @@ names_list.remove('num_repeats')
         
 all_csvs_df = utils.csv_list_to_dataframe(csv_list,names_list)
 
-
-
 def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting):
 
     styles = 'o^v>P'
@@ -80,6 +78,10 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
             data = all_csvs_df.xs((n_pre_type,noise_master,modifier,k),level=('n_pre_type','noise_master','modifier','k'),drop_level=False)
 
             data = data.to_numpy()
+
+            # In case there's no data
+            if data.size == 0:
+                data = np.inf
 
             y_data_tmp = np.max(np.unique(data))
 
@@ -131,13 +133,8 @@ n_pre_type = 'constant'
 
 noise_masters = ['('+str(noise_level)+', 0.0)','(0.0, '+str(noise_level)+')']
 
-# Some numerics haven't run for k=100 yet.
-if plot_type == 1:
-    ks = [20.0,40.0,60.0,80.0,100.0]
-elif plot_type == 2:
-    ks = [20.0,40.0,60.0,80.0]#,100.0]
-elif plot_type == 3:
-    ks = [20.0]#,40.0,60.0,80.0]#,100.0]
+ks = [20.0,40.0,60.0,80.0,100.0]
+
 
 
 
@@ -145,8 +142,12 @@ elif plot_type == 3:
 
 
 # Need to sort saving names
+# A hack because my computational code saved things wrong
 
-modifierss = [['(0.0, 0.0, 0.0, 0.0)', '(0.0, -0.1, 0.0, 0.0)', '(0.0, -0.2, 0.0, 0.0)', '(0.0, -0.3, 0.0, 0.0)', '(0.0, -0.4, 0.0, 0.0)', '(0.0, -0.5, 0.0, 0.0)', '(0.0, -0.6, 0.0, 0.0)', '(0.0, -0.7, 0.0, 0.0)', '(0.0, -0.8, 0.0, 0.0)', '(0.0, -0.9, 0.0, 0.0)', '(0.0, -1.0, 0.0, 0.0)'], ['(0.0, 0.0, 0.0, 0.0)', '(0.0, 0.0, 0.0, -0.1)', '(0.0, 0.0, 0.0, -0.2)', '(0.0, 0.0, 0.0, -0.3)', '(0.0, 0.0, 0.0, -0.4)', '(0.0, 0.0, 0.0, -0.5)', '(0.0, 0.0, 0.0, -0.6)', '(0.0, 0.0, 0.0, -0.7)', '(0.0, 0.0, 0.0, -0.8)', '(0.0, 0.0, 0.0, -0.9)', '(0.0, 0.0, 0.0, -1.0)']]
+if plot_type == 3:
+    modifierss = [['(0.0, 0.0, 0.0, 0.0)', '(0.0, -0.1, 0.0, 0.0)', '(0.0, -0.2, 0.0, 0.0)', '(0.0, -0.3, 0.0, 0.0)', '(0.0, -0.4, 0.0, 0.0)', '(0.0, -0.5, 0.0, 0.0)', '(0.0, -0.6, 0.0, 0.0)', '(0.0, -0.7, 0.0, 0.0)', '(0.0, -0.8, 0.0, 0.0)', '(0.0, -0.9, 0.0, 0.0)', '(0.0, -1.0, 0.0, 0.0)'], ['(0.0, 0.0, -0.0, -0.0)', '(0.0, 0.0, -0.0, -0.1)', '(0.0, 0.0, -0.0, -0.2)', '(0.0, 0.0, -0.0, -0.3)', '(0.0, 0.0, -0.0, -0.4)', '(0.0, 0.0, -0.0, -0.5)', '(0.0, 0.0, -0.0, -0.6)', '(0.0, 0.0, -0.0, -0.7)', '(0.0, 0.0, -0.0, -0.8)', '(0.0, 0.0, -0.0, -0.9)', '(0.0, 0.0, -0.0, -1.0)']]
+else:
+    modifierss = [['(0.0, 0.0, 0.0, 0.0)', '(0.0, -0.1, 0.0, 0.0)', '(0.0, -0.2, 0.0, 0.0)', '(0.0, -0.3, 0.0, 0.0)', '(0.0, -0.4, 0.0, 0.0)', '(0.0, -0.5, 0.0, 0.0)', '(0.0, -0.6, 0.0, 0.0)', '(0.0, -0.7, 0.0, 0.0)', '(0.0, -0.8, 0.0, 0.0)', '(0.0, -0.9, 0.0, 0.0)', '(0.0, -1.0, 0.0, 0.0)'], ['(0.0, 0.0, 0.0, 0.0)', '(0.0, 0.0, 0.0, -0.1)', '(0.0, 0.0, 0.0, -0.2)', '(0.0, 0.0, 0.0, -0.3)', '(0.0, 0.0, 0.0, -0.4)', '(0.0, 0.0, 0.0, -0.5)', '(0.0, 0.0, 0.0, -0.6)', '(0.0, 0.0, 0.0, -0.7)', '(0.0, 0.0, 0.0, -0.8)', '(0.0, 0.0, 0.0, -0.9)', '(0.0, 0.0, 0.0, -1.0)']]
 
 things_for_plotting = [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
 
@@ -183,6 +184,7 @@ for ii_An in range(2):
     for ii in range(len(plot_collection)):
         print('start-'+str(ii))
         filename_tmp = filename + str(ii)
+        
         plt_gmres(n_pre_type,noise_master,ks,modifiers[plot_collection[ii][0]:plot_collection[ii][1]],filename_tmp,things_for_plotting[plot_collection[ii][0]:plot_collection[ii][1]])
         print('end-'+str(ii))
     print('end-An-'+str(ii_An))
