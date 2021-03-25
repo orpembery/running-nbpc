@@ -6,7 +6,7 @@ import numpy as np
 
 # This is a slightly rough-and-ready experiment to assess whether just taking the worst case on an alternating checkerboard gives substantially different numbers of GMRES iterations to those already in the paper.
 # It borrows from other code, but has had to be reworked for the deterministic scenario
-# Many input arguments: k, alpha, beta, bool (1 if want to do A computation, 0 if n),  bool: 1 if on balena, 0 otherwise
+# Many input arguments: k, alpha, beta, bool (1 if want to do A computation, 0 if n),  bool: 1 if on balena, 0 otherwise, number of subdomains in each direction
 
 on_balena = bool(int(sys.argv[5]))
 
@@ -23,6 +23,8 @@ beta = float(sys.argv[3])
 k_multipler = k**(-beta)
 
 A_vs_n = bool(int(sys.argv[4]))
+
+num_pieces = int(sys.argv[6])
 
 dim = 2
 
@@ -44,9 +46,6 @@ if A_vs_n:
 else:
     constant_to_multiply = 1.0
     varying_coeff = 1.0
-
-# This is, strictly speaking, the number of subdomains in each direction
-num_pieces = 10
 
 for ii in range(num_pieces):
     for jj in range(num_pieces):
@@ -105,7 +104,7 @@ else:
 if A_vs_n:
     modifier = (0.0,-beta,0.0,0.0)
 else:
-    modifier = (0.0,.0,-0.0,-beta)
+    modifier = (0.0,.0,0.0,-beta)
 
 num_repeats = 1
 
