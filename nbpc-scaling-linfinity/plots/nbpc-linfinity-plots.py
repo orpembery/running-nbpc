@@ -137,7 +137,7 @@ if plot_type == 1:
 elif plot_type == 2:
     ks = [20.0,40.0,60.0,80.0]#,100.0]
 elif plot_type == 3:
-    ks = [20.0,40.0,60.0,80.0]#,100.0]
+    ks = [20.0]#,40.0,60.0,80.0]#,100.0]
 
 
 
@@ -159,10 +159,11 @@ things_for_plotting = [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
 plot_collection = [[0,4],[4,8],[8,11]]
 
 for ii_An in range(2):
+    print('start-An-'+str(ii_An))
+    
     if ii_An == 0 and plot_type == 3:
         continue # Only n plots for deterministic at this stage
     
-    print('start-An-'+str(ii_An))
     noise_master = noise_masters[ii_An]
     modifiers = modifierss[ii_An]
 
