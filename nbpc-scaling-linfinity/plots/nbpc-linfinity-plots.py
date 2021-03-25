@@ -6,13 +6,26 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import colorcet as cc
 from matplotlib import rc, rcParams
+import sys
+
+# Have options depending on what plots to produce
+# Options are:
+# 1 - 100 repeats
+# 2 - 200 repeats
+# 3 - 10x10 deterministic, n only
+plot_type = int(sys.argv[1])
 
 rc('text', usetex=True) # Found out about this from https://stackoverflow.com/q/54827147
 
 rcParams.update({'text.latex.preamble':[r'\usepackage[urw-garamond]{mathdesign}',r'\usepackage[T1]{fontenc}'],'font.size':11})
 
-this_directory = '../output/'
-
+if plot_type == 1:
+    this_directory = '../output/'
+elif plot_type == 2:
+    this_directory = '../output-200-repeats/'
+elif plot_type == 3:
+    this_directory = '../output-deterministic-10/'
+    
 noise_level = 0.5
 
 csv_list = []
@@ -118,7 +131,15 @@ n_pre_type = 'constant'
 
 noise_masters = ['('+str(noise_level)+', 0.0)','(0.0, '+str(noise_level)+')']
 
-ks = [20.0,40.0,60.0,80.0,100.0]
+# Some numerics haven't run for k=100 yet.
+if plot_type == 1:
+    ks = [20.0,40.0,60.0,80.0,100.0]
+elif plot_type == 2:
+    ks = [20.0,40.0,60.0,80.0]#,100.0]
+elif plot_type == 3:
+    ks = [20.0]#,40.0,60.0,80.0]#,100.0]
+
+
 
 
 
@@ -139,9 +160,20 @@ plot_collection = [[0,4],[4,8],[8,11]]
 
 for ii_An in range(2):
     print('start-An-'+str(ii_An))
+    
+    if ii_An == 0 and plot_type == 3:
+        continue # Only n plots for deterministic at this stage
+    
     noise_master = noise_masters[ii_An]
     modifiers = modifierss[ii_An]
-    filename = 'nbpc-linfinity-plot-'
+
+    if plot_type == 1:
+        filename = 'nbpc-linfinity-plot-'
+    elif plot_type == 2:
+        filename = 'nbpc-linfinity-plot-200-repeats-'
+    elif plot_type == 3:
+        filename = 'nbpc-linfinity-plot-deterministic-10-'
+    
     if ii_An == 0:
         filename += 'A'
     else:

@@ -105,7 +105,7 @@ else:
 if A_vs_n:
     modifier = (0.0,-beta,0.0,0.0)
 else:
-    modifier = (0.0,.0,--0.0,beta)
+    modifier = (0.0,.0,-0.0,-beta)
 
 num_repeats = 1
 
