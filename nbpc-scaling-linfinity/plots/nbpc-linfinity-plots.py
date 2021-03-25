@@ -143,9 +143,9 @@ for ii_An in range(2):
     modifiers = modifierss[ii_An]
     filename = 'nbpc-linfinity-plot-'
     if ii_An == 0:
-        filename += 'n'
-    else:
         filename += 'A'
+    else:
+        filename += 'n'
     filename += '-'
     
     for ii in range(len(plot_collection)):
