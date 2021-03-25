@@ -72,6 +72,8 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
             number = things_for_plotting[ii]
 
         label = r'$\beta = $'+str(number)
+
+        diverge_x = np.array([])
         
         for k in ks:
             
@@ -81,10 +83,14 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
 
             # In case there's no data
             if data.size == 0:
-                data = np.inf
+                data = np.nan
 
             y_data_tmp = np.max(np.unique(data))
 
+            # In case GMRES diverged - running script for deterministic sets to inf (not for random, but that hasn't been a problem)
+            if np.isinf(y_data_tmp):
+                diverge_x = np.append(diverge_x,k)
+            
             #print(y_data_tmp)
 
             if np.all(y_data == 'setup'):
@@ -105,6 +111,12 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
         #print(y_data)
                 
         plt.plot(x_data,y_data,styles[ii]+'--',label=label,c=colours[ii])
+
+
+        if diverge_x.size != 0:
+            print('PLOTTING')
+            print(np.max(y_data))
+            plt.plot(diverge_x,np.repeat(1.1*np.max(y_data,where=~np.logical_or(np.isnan(y_data),np.isinf(y_data)),initial=-1.0),diverge_x.size),styles[ii],c='xkcd:gray')
 
         ax = fig.gca()
         ax.spines['right'].set_color('none')

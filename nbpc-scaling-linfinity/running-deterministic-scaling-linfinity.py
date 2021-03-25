@@ -72,20 +72,21 @@ n_pre = 1.0
 prob = hh.HelmholtzProblem(k=k, V=V, A=A, n=n, A_pre=A_pre, n_pre=n_pre)
 
 
+try:   
+    prob.solve()
 
-prob.solve()
+    GMRES_its = []
 
-GMRES_its = []
-
-if fd.COMM_WORLD.rank == 0:
-        
+    #if fd.COMM_WORLD.rank == 0:
     GMRES_its.append(prob.GMRES_its)
+    GMRES_its  = np.array(GMRES_its)
 
-GMRES_its  = np.array(GMRES_its)
+except fd.exceptions.ConvergenceError:
+    GMRES_its = np.array([np.inf])
 
 # Write this to file
 
-save_location = './output-deterministic-10/'
+save_location = './output-deterministic-'+str(num_pieces)+'/'
 
 h_tuple = [1.0,-1.5]
 
