@@ -13,7 +13,7 @@ import sys
 # 1 - 100 repeats
 # 2 - 200 repeats
 # 3 - 10x10 deterministic, n only
-# 3 - 2x2 deterministic, n only
+# 4 - 2x2 deterministic, n only
 plot_type = int(sys.argv[1])
 
 rc('text', usetex=True) # Found out about this from https://stackoverflow.com/q/54827147
@@ -89,6 +89,8 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
 
             y_data_tmp = np.max(np.unique(data))
 
+            print(y_data_tmp)
+            
             # In case GMRES diverged - running script for deterministic sets to inf (not for random, but that hasn't been a problem)
             if np.isinf(y_data_tmp):
                 diverge_x = np.append(diverge_x,k)
@@ -118,7 +120,8 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
         if diverge_x.size != 0:
             print('PLOTTING')
             print(np.max(y_data))
-            plt.plot(diverge_x,np.repeat(1.1*np.max(y_data,where=~np.logical_or(np.isnan(y_data),np.isinf(y_data)),initial=-1.0),diverge_x.size),styles[ii],c='xkcd:gray')
+            all_data = all_csvs_df.to_numpy()
+            plt.plot(diverge_x,np.repeat(1.1*np.max(all_data,where=~np.logical_or(np.isnan(all_data),np.isinf(all_data)),initial=-1.0),diverge_x.size),styles[ii],c='xkcd:gray')
 
         ax = fig.gca()
         ax.spines['right'].set_color('none')
@@ -156,11 +159,11 @@ ks = [20.0,40.0,60.0,80.0,100.0]
 
 
 # Need to sort saving names
-# A hack because my computational code saved things wrong
+# THis is a hack because my computational code saved things wrong
 # in the if statements the first element of modifierss may not work, but haven't done A runs at this stage
 
 if plot_type == 3:
-    modifierss = [['(0.0, 0.0, 0.0, 0.0)', '(0.0, -0.1, 0.0, 0.0)', '(0.0, -0.2, 0.0, 0.0)', '(0.0, -0.3, 0.0, 0.0)', '(0.0, -0.4, 0.0, 0.0)', '(0.0, -0.5, 0.0, 0.0)', '(0.0, -0.6, 0.0, 0.0)', '(0.0, -0.7, 0.0, 0.0)', '(0.0, -0.8, 0.0, 0.0)', '(0.0, -0.9, 0.0, 0.0)', '(0.0, -1.0, 0.0, 0.0)'], ['(0.0, 0.0, -0.0, -0.0)', '(0.0, 0.0, -0.0, -0.1)', '(0.0, 0.0, -0.0, -0.2)', '(0.0, 0.0, -0.0, -0.3)', '(0.0, 0.0, -0.0, -0.4)', '(0.0, 0.0, -0.0, -0.5)', '(0.0, 0.0, -0.0, -0.6)', '(0.0, 0.0, -0.0, -0.7)', '(0.0, 0.0, -0.0, -0.8)', '(0.0, 0.0, -0.0, -0.9)', '(0.0, 0.0, -0.0, -1.0)']]
+    modifierss = [['(0.0, 0.0, 0.0, 0.0)', '(0.0, -0.1, 0.0, 0.0)', '(0.0, -0.2, 0.0, 0.0)', '(0.0, -0.3, 0.0, 0.0)', '(0.0, -0.4, 0.0, 0.0)', '(0.0, -0.5, 0.0, 0.0)', '(0.0, -0.6, 0.0, 0.0)', '(0.0, -0.7, 0.0, 0.0)', '(0.0, -0.8, 0.0, 0.0)', '(0.0, -0.9, 0.0, 0.0)', '(0.0, -1.0, 0.0, 0.0)'], ['(0.0, 0.0, 0.0, -0.0)', '(0.0, 0.0, 0.0, -0.1)', '(0.0, 0.0, 0.0, -0.2)', '(0.0, 0.0, 0.0, -0.3)', '(0.0, 0.0, 0.0, -0.4)', '(0.0, 0.0, 0.0, -0.5)', '(0.0, 0.0, 0.0, -0.6)', '(0.0, 0.0, 0.0, -0.7)', '(0.0, 0.0, 0.0, -0.8)', '(0.0, 0.0, 0.0, -0.9)', '(0.0, 0.0, 0.0, -1.0)']]
 elif plot_type == 4:
     modifierss = [['(0.0, 0.0, 0.0, 0.0)', '(0.0, -0.1, 0.0, 0.0)', '(0.0, -0.2, 0.0, 0.0)', '(0.0, -0.3, 0.0, 0.0)', '(0.0, -0.4, 0.0, 0.0)', '(0.0, -0.5, 0.0, 0.0)', '(0.0, -0.6, 0.0, 0.0)', '(0.0, -0.7, 0.0, 0.0)', '(0.0, -0.8, 0.0, 0.0)', '(0.0, -0.9, 0.0, 0.0)', '(0.0, -1.0, 0.0, 0.0)'], ['(0.0, 0.0, 0.0, -0.0)', '(0.0, 0.0, 0.0, -0.1)', '(0.0, 0.0, 0.0, -0.2)', '(0.0, 0.0, 0.0, -0.3)', '(0.0, 0.0, 0.0, -0.4)', '(0.0, 0.0, 0.0, -0.5)', '(0.0, 0.0, 0.0, -0.6)', '(0.0, 0.0, 0.0, -0.7)', '(0.0, 0.0, 0.0, -0.8)', '(0.0, 0.0, 0.0, -0.9)', '(0.0, 0.0, 0.0, -1.0)']]
 else:
