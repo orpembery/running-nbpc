@@ -6,13 +6,29 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import colorcet as cc
 from matplotlib import rc, rcParams
+import sys
+
+# Have options depending on what plots to produce
+# Options are:
+# 1 - 100 repeats
+# 2 - 200 repeats
+# 3 - 10x10 deterministic, n only
+# 4 - 2x2 deterministic, n only
+plot_type = int(sys.argv[1])
 
 rc('text', usetex=True) # Found out about this from https://stackoverflow.com/q/54827147
 
 rcParams.update({'text.latex.preamble':[r'\usepackage[urw-garamond]{mathdesign}',r'\usepackage[T1]{fontenc}'],'font.size':11})
 
-this_directory = '../output/'
-
+if plot_type == 1:
+    this_directory = '../output/'
+elif plot_type == 2:
+    this_directory = '../output-200-repeats/'
+elif plot_type == 3:
+    this_directory = '../output-deterministic-10/'
+elif plot_type == 4:
+    this_directory = '../output-deterministic-2/'
+    
 noise_level = 0.5
 
 csv_list = []
@@ -32,8 +48,6 @@ names_list.remove('A_pre_type')
 names_list.remove('num_repeats')
         
 all_csvs_df = utils.csv_list_to_dataframe(csv_list,names_list)
-
-
 
 def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting):
 
@@ -61,15 +75,26 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
             number = things_for_plotting[ii]
 
         label = r'$\beta = $'+str(number)
+
+        diverge_x = np.array([])
         
         for k in ks:
-            
             data = all_csvs_df.xs((n_pre_type,noise_master,modifier,k),level=('n_pre_type','noise_master','modifier','k'),drop_level=False)
 
             data = data.to_numpy()
 
+            # In case there's no data
+            if data.size == 0:
+                data = np.nan
+
             y_data_tmp = np.max(np.unique(data))
 
+            print(y_data_tmp)
+            
+            # In case GMRES diverged - running script for deterministic sets to inf (not for random, but that hasn't been a problem)
+            if np.isinf(y_data_tmp):
+                diverge_x = np.append(diverge_x,k)
+            
             #print(y_data_tmp)
 
             if np.all(y_data == 'setup'):
@@ -90,6 +115,13 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
         #print(y_data)
                 
         plt.plot(x_data,y_data,styles[ii]+'--',label=label,c=colours[ii])
+
+
+        if diverge_x.size != 0:
+            print('PLOTTING')
+            print(np.max(y_data))
+            all_data = all_csvs_df.to_numpy()
+            plt.plot(diverge_x,np.repeat(1.1*np.max(all_data,where=~np.logical_or(np.isnan(all_data),np.isinf(all_data)),initial=-1.0),diverge_x.size),styles[ii],c='xkcd:gray')
 
         ax = fig.gca()
         ax.spines['right'].set_color('none')
@@ -123,9 +155,19 @@ ks = [20.0,40.0,60.0,80.0,100.0]
 
 
 
-# Need to sort saving names
 
-modifierss = [['(0.0, 0.0, 0.0, 0.0)', '(0.0, -0.1, 0.0, 0.0)', '(0.0, -0.2, 0.0, 0.0)', '(0.0, -0.3, 0.0, 0.0)', '(0.0, -0.4, 0.0, 0.0)', '(0.0, -0.5, 0.0, 0.0)', '(0.0, -0.6, 0.0, 0.0)', '(0.0, -0.7, 0.0, 0.0)', '(0.0, -0.8, 0.0, 0.0)', '(0.0, -0.9, 0.0, 0.0)', '(0.0, -1.0, 0.0, 0.0)'], ['(0.0, 0.0, 0.0, 0.0)', '(0.0, 0.0, 0.0, -0.1)', '(0.0, 0.0, 0.0, -0.2)', '(0.0, 0.0, 0.0, -0.3)', '(0.0, 0.0, 0.0, -0.4)', '(0.0, 0.0, 0.0, -0.5)', '(0.0, 0.0, 0.0, -0.6)', '(0.0, 0.0, 0.0, -0.7)', '(0.0, 0.0, 0.0, -0.8)', '(0.0, 0.0, 0.0, -0.9)', '(0.0, 0.0, 0.0, -1.0)']]
+
+
+# Need to sort saving names
+# THis is a hack because my computational code saved things wrong
+# in the if statements the first element of modifierss may not work, but haven't done A runs at this stage
+
+if plot_type == 3:
+    modifierss = [['(0.0, 0.0, 0.0, 0.0)', '(0.0, -0.1, 0.0, 0.0)', '(0.0, -0.2, 0.0, 0.0)', '(0.0, -0.3, 0.0, 0.0)', '(0.0, -0.4, 0.0, 0.0)', '(0.0, -0.5, 0.0, 0.0)', '(0.0, -0.6, 0.0, 0.0)', '(0.0, -0.7, 0.0, 0.0)', '(0.0, -0.8, 0.0, 0.0)', '(0.0, -0.9, 0.0, 0.0)', '(0.0, -1.0, 0.0, 0.0)'], ['(0.0, 0.0, 0.0, -0.0)', '(0.0, 0.0, 0.0, -0.1)', '(0.0, 0.0, 0.0, -0.2)', '(0.0, 0.0, 0.0, -0.3)', '(0.0, 0.0, 0.0, -0.4)', '(0.0, 0.0, 0.0, -0.5)', '(0.0, 0.0, 0.0, -0.6)', '(0.0, 0.0, 0.0, -0.7)', '(0.0, 0.0, 0.0, -0.8)', '(0.0, 0.0, 0.0, -0.9)', '(0.0, 0.0, 0.0, -1.0)']]
+elif plot_type == 4:
+    modifierss = [['(0.0, 0.0, 0.0, 0.0)', '(0.0, -0.1, 0.0, 0.0)', '(0.0, -0.2, 0.0, 0.0)', '(0.0, -0.3, 0.0, 0.0)', '(0.0, -0.4, 0.0, 0.0)', '(0.0, -0.5, 0.0, 0.0)', '(0.0, -0.6, 0.0, 0.0)', '(0.0, -0.7, 0.0, 0.0)', '(0.0, -0.8, 0.0, 0.0)', '(0.0, -0.9, 0.0, 0.0)', '(0.0, -1.0, 0.0, 0.0)'], ['(0.0, 0.0, 0.0, -0.0)', '(0.0, 0.0, 0.0, -0.1)', '(0.0, 0.0, 0.0, -0.2)', '(0.0, 0.0, 0.0, -0.3)', '(0.0, 0.0, 0.0, -0.4)', '(0.0, 0.0, 0.0, -0.5)', '(0.0, 0.0, 0.0, -0.6)', '(0.0, 0.0, 0.0, -0.7)', '(0.0, 0.0, 0.0, -0.8)', '(0.0, 0.0, 0.0, -0.9)', '(0.0, 0.0, 0.0, -1.0)']]
+else:
+    modifierss = [['(0.0, 0.0, 0.0, 0.0)', '(0.0, -0.1, 0.0, 0.0)', '(0.0, -0.2, 0.0, 0.0)', '(0.0, -0.3, 0.0, 0.0)', '(0.0, -0.4, 0.0, 0.0)', '(0.0, -0.5, 0.0, 0.0)', '(0.0, -0.6, 0.0, 0.0)', '(0.0, -0.7, 0.0, 0.0)', '(0.0, -0.8, 0.0, 0.0)', '(0.0, -0.9, 0.0, 0.0)', '(0.0, -1.0, 0.0, 0.0)'], ['(0.0, 0.0, 0.0, 0.0)', '(0.0, 0.0, 0.0, -0.1)', '(0.0, 0.0, 0.0, -0.2)', '(0.0, 0.0, 0.0, -0.3)', '(0.0, 0.0, 0.0, -0.4)', '(0.0, 0.0, 0.0, -0.5)', '(0.0, 0.0, 0.0, -0.6)', '(0.0, 0.0, 0.0, -0.7)', '(0.0, 0.0, 0.0, -0.8)', '(0.0, 0.0, 0.0, -0.9)', '(0.0, 0.0, 0.0, -1.0)']]
 
 things_for_plotting = [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
 
@@ -139,18 +181,32 @@ plot_collection = [[0,4],[4,8],[8,11]]
 
 for ii_An in range(2):
     print('start-An-'+str(ii_An))
+    
+    if ii_An == 0 and (plot_type == 3 or plot_type == 4):
+        continue # Only n plots for deterministic at this stage
+    
     noise_master = noise_masters[ii_An]
     modifiers = modifierss[ii_An]
-    filename = 'nbpc-linfinity-plot-'
+
+    if plot_type == 1:
+        filename = 'nbpc-linfinity-plot-'
+    elif plot_type == 2:
+        filename = 'nbpc-linfinity-plot-200-repeats-'
+    elif plot_type == 3:
+        filename = 'nbpc-linfinity-plot-deterministic-10-'
+    elif plot_type == 4:
+        filename = 'nbpc-linfinity-plot-deterministic-2-'
+    
     if ii_An == 0:
-        filename += 'n'
-    else:
         filename += 'A'
+    else:
+        filename += 'n'
     filename += '-'
     
     for ii in range(len(plot_collection)):
         print('start-'+str(ii))
         filename_tmp = filename + str(ii)
+        
         plt_gmres(n_pre_type,noise_master,ks,modifiers[plot_collection[ii][0]:plot_collection[ii][1]],filename_tmp,things_for_plotting[plot_collection[ii][0]:plot_collection[ii][1]])
         print('end-'+str(ii))
     print('end-An-'+str(ii_An))
