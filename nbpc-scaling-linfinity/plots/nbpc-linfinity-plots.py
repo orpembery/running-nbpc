@@ -16,6 +16,8 @@ import sys
 # 4 - 2x2 deterministic, n only
 plot_type = int(sys.argv[1])
 
+div_thresh = 500
+
 rc('text', usetex=True) # Found out about this from https://stackoverflow.com/q/54827147
 
 rcParams.update({'text.latex.preamble':[r'\usepackage[urw-garamond]{mathdesign}',r'\usepackage[T1]{fontenc}'],'font.size':11})
@@ -57,6 +59,8 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
     
     fig = plt.figure()
 
+    use_nice_y_axis = False
+
     for modifier in modifiers:
 
         ii = modifiers.index(modifier)
@@ -89,23 +93,25 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
 
             y_data_tmp = np.max(np.unique(data))
 
-            print(y_data_tmp)
+            #print(y_data_tmp)
             
-            # In case GMRES diverged - running script for deterministic sets to inf (not for random, but that hasn't been a problem)
-            if np.isinf(y_data_tmp):
+            # In case GMRES diverged (i.e., GMRES itself diverged, or converged but took >= 500 iterations).
+            if np.isinf(y_data_tmp) or y_data_tmp >= div_thresh:
                 diverge_x = np.append(diverge_x,k)
             
             #print(y_data_tmp)
 
-            if np.all(y_data == 'setup'):
-                y_data = np.array(y_data_tmp)
-            else:
-                y_data = np.append(y_data,y_data_tmp)
+            if y_data_tmp < div_thresh:
 
-            if np.all(x_data == 'setup'):
-                x_data = np.array(k)
-            else:
-                x_data = np.append(x_data,k)
+                if np.all(y_data == 'setup'):
+                    y_data = np.array(y_data_tmp)
+                else:
+                    y_data = np.append(y_data,y_data_tmp)
+
+                if np.all(x_data == 'setup'):
+                    x_data = np.array(k)
+                else:
+                    x_data = np.append(x_data,k)
 
             #print(x_data)
             #print(y_data)
@@ -118,10 +124,11 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
 
 
         if diverge_x.size != 0:
-            print('PLOTTING')
-            print(np.max(y_data))
+            use_nice_y_axis = True
+            #print('PLOTTING')
+            #print(np.max(y_data))
             all_data = all_csvs_df.to_numpy()
-            plt.plot(diverge_x,np.repeat(1.1*np.max(all_data,where=~np.logical_or(np.isnan(all_data),np.isinf(all_data)),initial=-1.0),diverge_x.size),styles[ii],c='xkcd:gray')
+            plt.plot(diverge_x,np.repeat(1.05*div_thresh,diverge_x.size),styles[ii],c='xkcd:gray')
 
         ax = fig.gca()
         ax.spines['right'].set_color('none')
@@ -136,8 +143,11 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
 
     # Integers only on y axis
     # Found out about this from https://www.scivision.dev/matplotlib-force-integer-labeling-of-axis/
-    ax = fig.gca()   
-    ax.yaxis.set_major_locator(MaxNLocator(integer=True)) # Maybe add an argument to MaxNLocator to give the number of intervals on the x axis
+    ax = fig.gca()
+    if use_nice_y_axis:
+        plt.yticks([100,200,300,400,500])
+    else:
+        ax.yaxis.set_major_locator(MaxNLocator(integer=True)) # Maybe add an argument to MaxNLocator to give the number of intervals on the x axis
     fig.set_size_inches((5.5,5.5))
     
     plt.savefig(filename+'.pgf')
@@ -180,7 +190,7 @@ things_for_plotting = [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
 plot_collection = [[0,4],[4,8],[8,11]]
 
 for ii_An in range(2):
-    print('start-An-'+str(ii_An))
+    #print('start-An-'+str(ii_An))
     
     if ii_An == 0 and (plot_type == 3 or plot_type == 4):
         continue # Only n plots for deterministic at this stage
@@ -204,13 +214,13 @@ for ii_An in range(2):
     filename += '-'
     
     for ii in range(len(plot_collection)):
-        print('start-'+str(ii))
+        #print('start-'+str(ii))
         filename_tmp = filename + str(ii)
         
         plt_gmres(n_pre_type,noise_master,ks,modifiers[plot_collection[ii][0]:plot_collection[ii][1]],filename_tmp,things_for_plotting[plot_collection[ii][0]:plot_collection[ii][1]])
-        print('end-'+str(ii))
-    print('end-An-'+str(ii_An))
-print('end of file')
+        #print('end-'+str(ii))
+    #print('end-An-'+str(ii_An))
+#print('end of file')
 
                               
 
