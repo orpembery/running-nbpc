@@ -8,7 +8,7 @@ import sys
 # 1 --> beta = [-0.1,-0.2]
 # 2 --> beta = [-0.3,-0.4,-0.5]
 # 3 --> beta = [-0.6,-0.7,-0.8,-0.9,-1.0]
-
+# Fourth argument should be number of repeats
 
 
 on_balena = bool(int(sys.argv[2]))
@@ -25,7 +25,7 @@ h_list = [(1.0,-1.5)]
 
 p_list = [1]
 
-num_repeats = 200
+num_repeats = int(sys.argv[4])
 
 num_pieces = 10
 

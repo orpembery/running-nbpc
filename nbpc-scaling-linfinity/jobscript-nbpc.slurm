@@ -12,4 +12,4 @@ source /beegfs/scratch/user/s/orp20/own-utilities/helmholtz_firedrake_venv.sh
 
 cd /home/s/orp20/scratch/running-nbpc/nbpc-scaling-linfinity
 
-mpirun -n $1 python running-nbpc-scaling-linfinity.py $2 $3 $4
+mpirun -n $1 python running-nbpc-scaling-linfinity.py $2 $3 $4 $5
