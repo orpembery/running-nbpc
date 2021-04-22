@@ -10,7 +10,7 @@ for reps in 100 200
 do
 num_procs=$(python calc_procs.py $k)
    
-sbatch --job-name="$k" --err="$k.err" --output="$k.out" ./jobscript-nbpc.slurm $num_procs $k 1 $betas $reps
+sbatch ./jobscript-nbpc.slurm $num_procs $k 1 $betas $reps
 done
 done
 done
