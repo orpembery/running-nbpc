@@ -37,7 +37,10 @@ n_pre_type='constant'
 
 dim = 2
 
-save_location = './output/'
+if num_repeats == 100:
+    save_location = './output/'
+elif num_repeats == 200:
+    save_location = './output-200-repeats/'
 
 noise_master_level = 0.5
 
