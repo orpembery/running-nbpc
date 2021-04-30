@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --account=rc-ma1200
-#SBATCH --nodes=1
+#SBATCH --nodes=5
 #SBATCH --ntasks-per-node=16
 #SBATCH --error=%j.err
 #SBATCH --output=%j.out
