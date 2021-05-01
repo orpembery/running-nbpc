@@ -139,7 +139,7 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
 
     plt.legend()
 
-    plt.xticks([20,40,60,80,100]) # told by http://stackoverflow.com/questions/12608788/ddg#12608937
+    plt.xticks([float(k) for k in ks]) # told by http://stackoverflow.com/questions/12608788/ddg#12608937
 
     # Integers only on y axis
     # Found out about this from https://www.scivision.dev/matplotlib-force-integer-labeling-of-axis/
