@@ -1,5 +1,5 @@
-"Git hash","07c5e0d4a123796a9f1c46cc09c7227991d3c3e0"
-"Date/Time","2021-04-28T21:47:29.545543"
+"Git hash","f9644bd6c58a1ec2a8138c041c492a485e39736b"
+"Date/Time","2021-04-29T18:52:22.440499"
 "k",120.0
 "h_tuple","[1.0, -1.5]"
 "p",1
@@ -7,6 +7,6 @@
 "A_pre_type","constant"
 "n_pre_type","constant"
 "noise_master","(0.0, 0.5)"
-"modifier","(0.0, 0.0, 0.0, -0.7)"
+"modifier","(0.0, 0.0, 0.0, -0.8)"
 "num_repeats",1
-0,8
+0,7
