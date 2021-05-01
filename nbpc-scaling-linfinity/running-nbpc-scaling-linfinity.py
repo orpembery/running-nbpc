@@ -21,6 +21,8 @@ beta_set = int(sys.argv[3])
 
 k_list = [float(sys.argv[1])]
 
+print(k_list,beta_set)
+
 h_list = [(1.0,-1.5)]
 
 p_list = [1]
