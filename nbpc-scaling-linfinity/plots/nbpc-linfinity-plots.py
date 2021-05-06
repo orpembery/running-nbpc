@@ -61,7 +61,9 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
 
     use_nice_y_axis = False
 
-    for modifier in modifiers:
+    grey_plot_count = np.zeros_like(ks)   
+
+    for modifier in reversed(modifiers):
 
         ii = modifiers.index(modifier)
 
@@ -92,14 +94,11 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
                 data = np.nan
 
             y_data_tmp = np.max(np.unique(data))
-
-            #print(y_data_tmp)
             
             # In case GMRES diverged (i.e., GMRES itself diverged, or converged but took >= 500 iterations).
             if np.isinf(y_data_tmp) or y_data_tmp >= div_thresh:
                 diverge_x = np.append(diverge_x,k)
-            
-            #print(y_data_tmp)
+                grey_plot_count[np.where(np.array(ks)==k)] += 1.0
 
             if y_data_tmp < div_thresh:
 
@@ -112,23 +111,20 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
                     x_data = np.array(k)
                 else:
                     x_data = np.append(x_data,k)
-
-            #print(x_data)
-            #print(y_data)
-
-        #print(x_data)
-
-        #print(y_data)
                 
         plt.plot(x_data,y_data,styles[ii]+'--',label=label,c=colours[ii])
 
 
         if diverge_x.size != 0:
             use_nice_y_axis = True
-            #print('PLOTTING')
-            #print(np.max(y_data))
+            
             all_data = all_csvs_df.to_numpy()
-            plt.plot(diverge_x,np.repeat(1.05*div_thresh,diverge_x.size),styles[ii],c='xkcd:gray')
+
+            # This is a hack to get the grey markers in the right place
+            altitudes = 1.0 + np.array([grey_plot_count[np.where(ks==k)] for k in diverge_x])*0.035
+            
+            plt.plot(diverge_x,altitudes*div_thresh,styles[ii],c='xkcd:gray')
+            # np.repeat((1.0+(4.0-float(ii))*0.035)
 
         ax = fig.gca()
         ax.spines['right'].set_color('none')
@@ -192,7 +188,6 @@ things_for_plotting = [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
 plot_collection = [[0,4],[4,8],[8,11]]
 
 for ii_An in range(2):
-    #print('start-An-'+str(ii_An))
     
     if ii_An == 0 and (plot_type == 3 or plot_type == 4):
         continue # Only n plots for deterministic at this stage
@@ -216,13 +211,9 @@ for ii_An in range(2):
     filename += '-'
     
     for ii in range(len(plot_collection)):
-        #print('start-'+str(ii))
         filename_tmp = filename + str(ii)
         
         plt_gmres(n_pre_type,noise_master,ks,modifiers[plot_collection[ii][0]:plot_collection[ii][1]],filename_tmp,things_for_plotting[plot_collection[ii][0]:plot_collection[ii][1]])
-        #print('end-'+str(ii))
-    #print('end-An-'+str(ii_An))
-#print('end of file')
 
                               
 
