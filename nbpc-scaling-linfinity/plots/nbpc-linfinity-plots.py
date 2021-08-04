@@ -20,7 +20,8 @@ div_thresh = 500
 
 rc('text', usetex=True) # Found out about this from https://stackoverflow.com/q/54827147
 
-rcParams.update({'text.latex.preamble':[r'\usepackage[urw-garamond]{mathdesign}',r'\usepackage[T1]{fontenc}'],'font.size':11})
+rcParams.update({#'text.latex.preamble':[r'\usepackage[urw-garamond]{mathdesign}',r'\usepackage[T1]{fontenc}'],
+    'font.size':6})
 
 if plot_type == 1:
     this_directory = '../output/'
@@ -112,7 +113,7 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
                 else:
                     x_data = np.append(x_data,k)
                 
-        plt.plot(x_data,y_data,styles[ii]+'--',label=label,c=colours[ii])
+        plt.plot(x_data,y_data,styles[ii]+'--',label=label,c=colours[ii],markersize=4.0)
 
 
         if diverge_x.size != 0:
@@ -144,7 +145,7 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
         plt.yticks([100,200,300,400,500])
     else:
         ax.yaxis.set_major_locator(MaxNLocator(integer=True)) # Maybe add an argument to MaxNLocator to give the number of intervals on the x axis
-    fig.set_size_inches((5.5,5.5))
+    fig.set_size_inches((3,3))
     
     plt.savefig(filename+'.pgf')
     plt.close('all')
