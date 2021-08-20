@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.9.21)  20 AUG 2021 17:49
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.9.21)  20 AUG 2021 17:51
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -410,10 +410,10 @@ e
 
 (./nbpc-linfinity-plot-n-0.pgf
 
-LaTeX Font Warning: Font shape `OT1/cmss/m/n' in size <15> not available
-(Font)              size <14.4> substituted on input line 90.
+LaTeX Font Warning: Font shape `OT1/cmss/m/n' in size <13> not available
+(Font)              size <12> substituted on input line 90.
 
-LaTeX Font Info:    Calculating math sizes for size <15> on input line 90.
+LaTeX Font Info:    Calculating math sizes for size <13> on input line 90.
 LaTeX Font Info:    Trying to load font information for OT1+ztmcm on input line
  90.
 (/usr/local/texlive/2020/texmf-dist/tex/latex/psnfss/ot1ztmcm.fd
@@ -437,11 +437,11 @@ LaTeX Font Info:    Trying to load font information for OMX+ztmcm on input line
 (/usr/local/texlive/2020/texmf-dist/tex/latex/psnfss/omxztmcm.fd
 File: omxztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OMX/ztmcm.
 )
-LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <15> not available
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <13> not available
 (Font)              Font shape `OT1/ptm/b/n' tried instead on input line 90.
-LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <11.10008> not available
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9.62007> not available
 (Font)              Font shape `OT1/ptm/b/n' tried instead on input line 90.
-LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9.00009> not available
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7.80008> not available
 (Font)              Font shape `OT1/ptm/b/n' tried instead on input line 90.
  [1
 
@@ -457,13 +457,13 @@ LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9.00009> not available
 (./nbpc-linfinity-plot-deterministic-2-n-2.pgf [12]) (./figures.aux)
 
 LaTeX Font Warning: Size substitutions with differences
-(Font)              up to 0.6pt have occurred.
+(Font)              up to 1.0pt have occurred.
 
  ) 
 Here is how much of TeX's memory you used:
  9710 strings out of 480876
- 192865 string characters out of 5907582
- 425200 words of memory out of 5000000
+ 192856 string characters out of 5907582
+ 425192 words of memory out of 5000000
  25107 multiletter control sequences out of 15000+600000
  548416 words of font info for 57 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
@@ -474,7 +474,7 @@ xlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texl
 ive/2020/texmf-dist/fonts/type1/urw/symbol/usyr.pfb></usr/local/texlive/2020/te
 xmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local/texlive/2020/texmf-dist/f
 onts/type1/urw/times/utmri8a.pfb>
-Output written on figures.pdf (12 pages, 59297 bytes).
+Output written on figures.pdf (12 pages, 59415 bytes).
 PDF statistics:
  67 PDF objects out of 1000 (max. 8388607)
  47 compressed objects within 1 object stream

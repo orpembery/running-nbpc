@@ -21,7 +21,7 @@ div_thresh = 500
 rc('text', usetex=True) # Found out about this from https://stackoverflow.com/q/54827147
 
 rcParams.update({#'text.latex.preamble':[r'\usepackage[urw-garamond]{mathdesign}',r'\usepackage[T1]{fontenc}'],
-    'font.size':np.ceil(8/0.55)})
+    'font.size':np.ceil(7/0.55)})
 
 if plot_type == 1:
     this_directory = '../output/'
