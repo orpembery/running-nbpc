@@ -81,7 +81,7 @@ def plt_gmres(n_pre_type,noise_master,ks,modifiers,filename,things_for_plotting)
         else:
             number = things_for_plotting[ii]
 
-        label = r'$\beta = $'+str(number)
+        label = r'$\beta = '+str(number)+'$'
 
         diverge_x = np.array([])
         

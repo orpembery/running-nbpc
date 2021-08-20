@@ -730,10 +730,10 @@
 \pgfsetstrokeopacity{0.800000}%
 \pgfsetdash{}{0pt}%
 \pgfpathmoveto{\pgfqpoint{0.833333in}{0.709167in}}%
-\pgfpathlineto{\pgfqpoint{2.160829in}{0.709167in}}%
-\pgfpathquadraticcurveto{\pgfqpoint{2.202496in}{0.709167in}}{\pgfqpoint{2.202496in}{0.750833in}}%
-\pgfpathlineto{\pgfqpoint{2.202496in}{1.647358in}}%
-\pgfpathquadraticcurveto{\pgfqpoint{2.202496in}{1.689024in}}{\pgfqpoint{2.160829in}{1.689024in}}%
+\pgfpathlineto{\pgfqpoint{2.135293in}{0.709167in}}%
+\pgfpathquadraticcurveto{\pgfqpoint{2.176960in}{0.709167in}}{\pgfqpoint{2.176960in}{0.750833in}}%
+\pgfpathlineto{\pgfqpoint{2.176960in}{1.647358in}}%
+\pgfpathquadraticcurveto{\pgfqpoint{2.176960in}{1.689024in}}{\pgfqpoint{2.135293in}{1.689024in}}%
 \pgfpathlineto{\pgfqpoint{0.833333in}{1.689024in}}%
 \pgfpathquadraticcurveto{\pgfqpoint{0.791667in}{1.689024in}}{\pgfqpoint{0.791667in}{1.647358in}}%
 \pgfpathlineto{\pgfqpoint{0.791667in}{0.750833in}}%
@@ -777,7 +777,7 @@
 \definecolor{textcolor}{rgb}{0.000000,0.000000,0.000000}%
 \pgfsetstrokecolor{textcolor}%
 \pgfsetfillcolor{textcolor}%
-\pgftext[x=1.458333in,y=1.447406in,left,base]{\color{textcolor}\sffamily\fontsize{15.000000}{18.000000}\selectfont \(\displaystyle \beta = \)1}%
+\pgftext[x=1.458333in,y=1.447406in,left,base]{\color{textcolor}\sffamily\fontsize{15.000000}{18.000000}\selectfont \(\displaystyle \beta = 1\)}%
 \end{pgfscope}%
 \begin{pgfscope}%
 \pgfsetbuttcap%
@@ -815,7 +815,7 @@
 \definecolor{textcolor}{rgb}{0.000000,0.000000,0.000000}%
 \pgfsetstrokecolor{textcolor}%
 \pgfsetfillcolor{textcolor}%
-\pgftext[x=1.458333in,y=1.141621in,left,base]{\color{textcolor}\sffamily\fontsize{15.000000}{18.000000}\selectfont \(\displaystyle \beta = \)0.9}%
+\pgftext[x=1.458333in,y=1.141621in,left,base]{\color{textcolor}\sffamily\fontsize{15.000000}{18.000000}\selectfont \(\displaystyle \beta = 0.9\)}%
 \end{pgfscope}%
 \begin{pgfscope}%
 \pgfsetbuttcap%
@@ -859,7 +859,7 @@
 \definecolor{textcolor}{rgb}{0.000000,0.000000,0.000000}%
 \pgfsetstrokecolor{textcolor}%
 \pgfsetfillcolor{textcolor}%
-\pgftext[x=1.458333in,y=0.835835in,left,base]{\color{textcolor}\sffamily\fontsize{15.000000}{18.000000}\selectfont \(\displaystyle \beta = \)0.8}%
+\pgftext[x=1.458333in,y=0.835835in,left,base]{\color{textcolor}\sffamily\fontsize{15.000000}{18.000000}\selectfont \(\displaystyle \beta = 0.8\)}%
 \end{pgfscope}%
 \end{pgfpicture}%
 \makeatother%
